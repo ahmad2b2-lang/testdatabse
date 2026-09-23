@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+
+  <title>Firestore Project</title>
+</head>
+<body>
+  <h1>Cloud Firestore with JavaScript</h1>
+  <div>
+    <h2>Add Data</h2>
+    <input type="text" id="name" placeholder="Name">
+    <input type="number" id="age" placeholder="Age">
+    <button onclick="addData()">Add Data</button>
+  </div>
+  <div>
+    <h2>Read Data</h2>
+    <button onclick="getData()">Get Data</button>
+    <ul id="data-list"></ul>
+  </div>
+  <script>
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
+import firebaseConfig from './firebase-config.js';
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Add data to Firestore
+async function addData() {
+  const name = document.getElementById('name').value;
+  const age = document.getElementById('age').value;
+
+  try {
+    const docRef = await addDoc(collection(db, 'users'), {
+      name: name,
+      age: parseInt(age)
+    });
+    console.log('Document written with ID: ', docRef.id);
+  } catch (e) {
+    console.error('Error adding document: ', e);
+  }
+}
+
+// Get data from Firestore
+async function getData() {
+  const querySnapshot = await getDocs(collection(db, 'users'));
+  const dataList = document.getElementById('data-list');
+  dataList.innerHTML = '';
+
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    const listItem = document.createElement('li');
+    listItem.textContent = `${data.name}, ${data.age}`;
+    dataList.appendChild(listItem);
+  });
+}
+
+// Expose functions to the global scope
+window.addData = addData;
+window.getData = getData;
+  </script>
+</body>
+</html>
