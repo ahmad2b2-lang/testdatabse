@@ -1,88 +1,1924 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-
-  <title>Firestore Project</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2e7d32">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.45 system-ui,-apple-system,sans-serif;background:#fff}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+html:not(.app-ready) .wrap{visibility:hidden}
+.boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#56657a;font:500 15px system-ui,sans-serif}
+</style>
 </head>
 <body>
-  <h1>Cloud Firestore with JavaScript</h1>
-  <div>
-    <h2>Add Data</h2>
-    <input type="text" id="name" placeholder="Name">
-    <input type="number" id="age" placeholder="Age">
-    <button onclick="addData()">Add Data</button>
-  </div>
-  <div>
-    <h2>Read Data</h2>
-    <button onclick="getData()">Get Data</button>
-    <ul id="data-list"></ul>
-  </div>
-  <script>
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
-import firebaseConfig from './firebase-config.js';
+<title>Product Card Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: single column on phone — form, then live card preview, then saved cards. Two columns on wide screens. */
+:root{
+  --bg:#ffffff; --surface:#ffffff; --sunk:#f0f5fb; --line:#cfdcec; --leaf:#e3eefa;
+  --fg:#16202c; --muted:#56657a; --accent:#1f63b8; --accent-fg:#ffffff; --tag:#f2b33d; --danger:#b3361f; color-scheme:light;
+  --display:"IBM Plex Sans Arabic","Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 48px;display:grid;gap:24px}
+header h1{font-family:var(--display);font-weight:800;font-size:1.6rem;letter-spacing:-.01em;margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted)}
+.cols{display:grid;gap:24px}
+.panel{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:14px;padding:16px;display:grid;gap:14px;min-width:0}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:grid;gap:5px;min-width:0}
+label{font-size:.82rem;font-weight:600}
+input,select,textarea{width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--sunk);border:1px solid var(--line);border-radius:9px;padding:10px 11px;min-height:44px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.money{position:relative}
+.money span{position:absolute;inset-inline-start:11px;top:50%;transform:translateY(-50%);font-family:var(--mono);color:var(--muted);font-size:.9rem;pointer-events:none}
+.money input{padding-inline-start:34px}
+.hint{font-size:.78rem;color:var(--muted);margin:0}
+.rates{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--leaf);border-radius:10px;padding:10px 12px;font-size:.85rem}
+.rates input{width:84px;min-height:36px;padding:6px 8px;background:var(--surface)}
+.rates label{font-weight:500;display:flex;align-items:center;gap:6px;font-family:var(--mono)}
+.uploads{display:flex;gap:12px}
+.upbtn{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--accent);border-radius:12px;background:var(--leaf);color:var(--accent);cursor:pointer;overflow:hidden;flex:none}
+.upbtn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.upbtn img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.upbtn.has{border-style:solid}
+.upbtn.has::after{content:"";position:absolute;inset-inline-end:4px;bottom:4px;width:16px;height:16px;border-radius:50%;background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E") center/12px no-repeat;box-shadow:0 0 0 2px var(--surface)}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+button{font:inherit;font-weight:600;border-radius:10px;min-height:46px;padding:0 18px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);flex:1}
+button.link{min-height:auto;padding:0;border:0;background:none;color:var(--accent);font-size:.8rem;font-weight:600}
+.err{color:var(--danger);font-size:.85rem;margin:0}
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+/* Product card */
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 6px 24px -14px rgba(20,40,80,.3)}
+.pcard .img{aspect-ratio:4/3;width:50%;max-width:100%;margin:14px auto 0;border-radius:12px;overflow:hidden;background:var(--sunk);position:relative}
+.pcard .img img{width:100%;height:100%;object-fit:cover;display:block}
+.imgnext{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;min-height:0;padding:0;border-radius:50%;border:0;background:rgba(255,255,255,.88);color:var(--fg);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.pcount{position:absolute;inset-inline-end:8px;bottom:8px;background:rgba(10,20,40,.65);color:#fff;font-family:var(--mono);font-size:.7rem;padding:2px 7px;border-radius:999px}
+.pbadge{position:absolute;inset-inline-start:4px;top:4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:1}
+.photostrip{display:flex;gap:8px;overflow-x:auto;padding-top:2px}
+.photostrip .ph{position:relative;width:52px;height:52px;flex:none;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.photostrip img{width:100%;height:100%;object-fit:cover}
+.photostrip button{position:absolute;top:2px;inset-inline-end:2px;width:20px;height:20px;min-height:0;padding:0;border-radius:50%;border:0;background:rgba(10,20,40,.7);color:#fff;font-size:.85rem;line-height:1}
+.pcard .cat{position:absolute;left:12px;top:12px;background:var(--tag);color:#1d1503;font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.pcard .body{padding:14px 16px 16px;display:grid;gap:12px}
+.pcard h3{font-family:var(--display);font-weight:700;font-size:1.3rem;line-height:1.15;margin:0;overflow-wrap:anywhere;text-wrap:balance}
+.pcard .sup{color:var(--muted);font-size:.88rem;margin:2px 0 0;overflow-wrap:anywhere}
+.prices{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.prices div{padding:8px 10px;min-width:0}
+.prices div+div{border-left:1px solid var(--line)}
+.prices small{display:block;font-family:var(--mono);font-size:.68rem;color:var(--muted);letter-spacing:.06em}
+.prices b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:1rem;overflow-wrap:anywhere}
+.prices .main{background:var(--sunk)}
+.meta{display:flex;justify-content:space-between;gap:10px;font-size:.84rem;color:var(--muted);flex-wrap:wrap}
+.meta b{color:var(--fg);font-family:var(--mono);font-weight:500}
+.urlrow{display:flex;gap:8px}
+.urlrow input{flex:1;min-width:0}
+.urlrow label{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:.9rem;border:1px solid var(--accent);color:var(--accent);border-radius:9px;padding:0 12px;min-height:44px;cursor:pointer;white-space:nowrap;flex:none}
+.urlrow label:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.plink{display:flex;align-items:center;gap:6px;font-size:.86rem;color:var(--accent);text-decoration:none;font-weight:600;overflow-wrap:anywhere}
+.margin-good{color:var(--accent)!important}.margin-bad{color:var(--danger)!important}
 
-// Add data to Firestore
-async function addData() {
-  const name = document.getElementById('name').value;
-  const age = document.getElementById('age').value;
-
-  try {
-    const docRef = await addDoc(collection(db, 'users'), {
-      name: name,
-      age: parseInt(age)
-    });
-    console.log('Document written with ID: ', docRef.id);
-  } catch (e) {
-    console.error('Error adding document: ', e);
+.saved h2{font-family:var(--display);font-size:1.15rem;margin:0}
+.savedhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.cardsbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.cardsbar button{min-height:40px;padding:0 14px;font-size:.9rem;border-color:var(--accent);color:var(--accent);background:var(--leaf)}
+.counter{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem}
+.gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;gap:0}
+.gallery::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;min-width:0;scroll-snap-align:center;padding:2px}
+.gallery .pcard{box-shadow:0 6px 24px -14px rgba(20,40,80,.3)}
+.navrow{display:flex;gap:12px}
+.navrow button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.navrow .sharebtn{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.viewer{flex-direction:column;gap:12px}
+.viewer p{color:#fff;margin:0;font-size:.9rem;text-align:center}
+.navrow button:disabled{opacity:.4;cursor:default}
+.cardactions{display:flex;gap:8px;padding:0 16px 14px}
+.cardactions button{min-height:38px;font-size:.84rem;padding:0 12px;flex:1}
+.empty{color:var(--muted);text-align:center;padding:24px;border:1.5px dashed var(--line);border-radius:12px;margin:0}
+.bizbtn{display:flex;align-items:center;gap:10px;width:100%;min-height:auto;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);font-weight:600;font-size:.84rem;text-align:start}
+.bizbtn img{width:72px;height:44px;object-fit:cover;border-radius:5px;flex:none}
+.viewer{position:fixed;inset:0;background:rgba(10,20,18,.88);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));z-index:10}
+.viewer img{max-width:100%;max-height:100%;border-radius:8px;background:#fff}
+.viewer button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));inset-inline-end:12px;min-height:40px;background:#fff;color:#16211f;border:0}
+.homebtn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;font-size:.9rem;border-color:var(--accent);color:var(--accent);background:var(--leaf);justify-self:start}
+.home{display:grid;gap:16px;padding-top:min(12vh,90px)}
+.tile{display:flex;align-items:center;gap:16px;width:100%;min-height:112px;padding:20px;text-align:start;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 6px 24px -16px rgba(20,40,80,.35)}
+.tile.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.tile .ic{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--leaf);color:var(--accent)}
+.tile.primary .ic{background:rgba(255,255,255,.18);color:var(--accent-fg)}
+.tile strong{display:block;font-family:var(--display);font-size:1.2rem;font-weight:700}
+.tile small{display:block;font-size:.86rem;font-weight:400;opacity:.8;margin-top:2px}
+.prices .main{background:var(--leaf)}
+.costrow{display:flex;gap:8px}
+.costrow select{width:auto;flex:none;font-family:var(--mono);font-weight:500;padding-inline-end:6px}
+.costrow .money{flex:1;min-width:0}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:0;padding-top:2px}
+.facts div{min-width:0}
+.facts dt{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-size:.92rem;font-weight:500;overflow-wrap:anywhere}
+.pct input{padding-inline-start:11px;padding-inline-end:30px}
+.pct .suffix{inset-inline-start:auto;inset-inline-end:11px}
+.result{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.result .profit{background:var(--leaf);padding:16px;display:grid;gap:2px;position:relative}
+.result .profit small{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.result .profit b{font-family:var(--display);font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1;overflow-wrap:anywhere}
+.result .profit b.neg{color:var(--danger)}
+.chip{justify-self:start;font-family:var(--mono);font-size:.78rem;padding:3px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line);margin-top:6px}
+.chip:empty{display:none}
+.chip.good{color:var(--accent);border-color:var(--accent)}.chip.bad{color:var(--danger);border-color:var(--danger)}
+.rows{margin:0;padding:6px 16px 10px}
+.rows div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.rows div:last-child{border-bottom:0}
+.rows dt{color:var(--muted);font-size:.9rem}
+.rows dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;text-align:end}
+.pagetitle{font-family:var(--display);font-weight:800;font-size:1.35rem;margin:0;text-wrap:balance}
+.suplist{display:grid;gap:0}
+.sup{border-bottom:1px solid var(--line)}
+.sup:last-child{border-bottom:0}
+.sup summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer}
+.sup summary::-webkit-details-marker{display:none}
+.sup summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.sup .bc{width:64px;height:40px;border-radius:6px;object-fit:cover;flex:none;background:var(--sunk);border:1px solid var(--line)}
+.sup .bc.ph{display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.sup .who{flex:1;min-width:0}
+.sup .who strong{display:block;font-size:1rem;overflow-wrap:anywhere}
+.sup .who small{display:block;color:var(--muted);font-size:.82rem;overflow-wrap:anywhere}
+.sup .n{font-family:var(--mono);font-size:.8rem;background:var(--leaf);color:var(--accent);border-radius:999px;padding:3px 9px;flex:none}
+.sup .chev{flex:none;color:var(--muted);transition:transform .15s}
+.sup[open] .chev{transform:rotate(90deg)}
+.sup ul{list-style:none;margin:0;padding:0 0 8px}
+.sup li button{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;text-align:start;font-weight:500}
+.sup li:last-child button{border-bottom:0}
+.sup li img,.sup li .noimg{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--sunk)}
+.sup li .nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.sup li .pc{font-family:var(--mono);font-size:.84rem;color:var(--muted);white-space:nowrap}
+textarea{resize:vertical;min-height:84px;line-height:1.4}
+.remarks{background:var(--sunk);border-radius:10px;padding:10px 12px}
+.remarks dt{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.remarks p{margin:3px 0 0;font-size:.9rem;white-space:pre-line;overflow-wrap:anywhere}
+.req{color:var(--danger)}
+.fielderr{color:var(--danger);font-size:.82rem;margin:0}
+input[aria-invalid="true"]{border-color:var(--danger);background:#fdf3f1}
+/* Compact add-product page */
+#formPage{gap:10px!important}
+#formPage .homebtn{min-height:34px;padding:0 12px;font-size:.85rem}
+#form.panel{padding:12px;gap:8px;border-radius:12px}
+#form .grid2{gap:8px}
+#form .field{gap:3px}
+#form label{font-size:.78rem}
+#form .eyebrow{margin-top:4px!important;font-size:.68rem}
+#form input,#form select{min-height:38px;padding:7px 10px}
+#form .money input{padding-inline-start:34px}
+#form textarea{min-height:60px;padding:7px 10px}
+#form .costrow{gap:6px}
+#form .urlrow{gap:6px}
+#form .urlrow label{min-height:38px;padding:0 10px}
+#form .uploads{gap:8px}
+#form .upbtn{width:52px;height:52px;border-radius:10px}
+#form .photostrip .ph{width:44px;height:44px}
+#form .hint{font-size:.74rem;line-height:1.3}
+#form .btns{gap:8px;margin-top:2px}
+#form .btns button{min-height:42px}
+.formhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dateadded{font-size:.76rem;color:var(--muted)}
+.dateadded b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.nophoto{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.86rem}
+.cat.nocat{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.costcap{margin:0 0 5px;font-size:.78rem;font-weight:600}
+.costcap span{font-weight:400;color:var(--muted)}
+.muted-row{margin:0;font-size:.84rem;color:var(--muted)}
+.prod{border-bottom:1px solid var(--line)}
+.prod:last-child{border-bottom:0}
+.prod>summary{list-style:none;display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 0;cursor:pointer}
+.prod>summary::-webkit-details-marker{display:none}
+.prod>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.prod>summary img,.prod>summary .noimg{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--sunk)}
+.prod .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.prod .pc{font-family:var(--mono);font-size:.84rem;color:var(--muted);white-space:nowrap}
+.prod[open] .chev{transform:rotate(90deg)}
+.prod .pbody{padding:4px 0 14px}
+.prod .pcard{box-shadow:none}
+.titleband{text-align:center;background:var(--accent);color:var(--accent-fg);border-radius:12px;padding:12px 16px}
+.pcard .zoom{display:block;width:100%;height:100%;min-height:0;padding:0;border:0;border-radius:0;background:none;cursor:zoom-in}
+/* Homepage: green theme */
+#homePage{--accent:#2e7d32;--accent-fg:#ffffff;--leaf:#e3f2d9;--line:#cfe3c4;padding-top:16px;gap:14px}
+#homePage .tile{box-shadow:0 6px 24px -16px rgba(30,70,20,.4)}
+.hero{margin:0 auto;width:30%;min-width:110px;border-radius:12px;overflow:hidden}
+.hero svg{display:block;width:100%;height:auto;max-width:100%}
+/* Arabic / right-to-left */
+.eyebrow,.facts dt,.remarks dt,.prices small,.result .profit small,.cat{font-family:var(--body);letter-spacing:0;text-transform:none}
+.eyebrow{font-weight:600}
+.prices small{font-size:.74rem}
+.facts dt,.remarks dt{font-size:.74rem}
+.gallery{direction:ltr}
+[dir="rtl"] .slide{direction:rtl}
+[dir="rtl"] .navrow svg,[dir="rtl"] .imgnext svg{transform:scaleX(-1)}
+[dir="rtl"] .sup .chev,[dir="rtl"] .prod .chev{transform:scaleX(-1)}
+[dir="rtl"] .sup[open]>summary .chev,[dir="rtl"] .prod[open]>summary .chev{transform:rotate(90deg)}
+#url,.plink{direction:ltr}
+[dir="rtl"] .plink{justify-content:flex-end}
+/* Language switch + per-language type */
+:root[lang="en"]{--display:"Archivo","Helvetica Neue",Arial,sans-serif;--body:"IBM Plex Sans",system-ui,-apple-system,sans-serif}
+:root[lang="zh"]{--display:"Archivo","Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;--body:"IBM Plex Sans","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+.langswitch button[lang="zh"]{font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+.langswitch{justify-self:end;display:inline-flex;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--surface);gap:2px}
+.langswitch button{min-height:34px;padding:0 14px;border:0;border-radius:999px;background:none;color:var(--muted);font-weight:600;font-size:.86rem}
+.langswitch button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.langswitch button[lang="ar"]{font-family:"IBM Plex Sans Arabic",system-ui,sans-serif}
+.langswitch button[lang="en"]{font-family:"IBM Plex Sans",system-ui,sans-serif}
+[dir="rtl"] .facts dd{text-align:right}
+[dir="ltr"] .facts dd{text-align:left}
+.datatools{display:grid;gap:8px;padding-top:6px}
+.dtbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dtbtns button,.dtimport{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:0 10px;text-align:center;line-height:1.2;border:1px solid var(--accent);border-radius:12px;background:var(--leaf);color:var(--accent);font-weight:600;font-size:.92rem;cursor:pointer}
+.dtimport:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.dtbtns button:disabled{opacity:.6;cursor:default}
+.dtmsg{margin:0;font-size:.86rem;padding:10px 12px;border-radius:10px;background:var(--leaf);color:var(--fg)}
+.dtmsg.bad{background:#fdf3f1;color:var(--danger)}
+.gate{--accent:#2e7d32;--accent-fg:#ffffff;--leaf:#e3f2d9;--line:#cfe3c4;display:grid;gap:18px;padding-top:16px}
+.gate .langswitch{justify-self:end}
+.gatecard{display:grid;gap:14px;justify-items:center;text-align:center;padding:24px 18px;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
+.gateicon{width:64px;height:64px;border-radius:18px;background:var(--leaf);color:var(--accent);display:flex;align-items:center;justify-content:center}
+.gatecard h1{font-family:var(--display);font-size:1.35rem;font-weight:800;margin:0;text-wrap:balance}
+.gatecard p{margin:0;color:var(--muted);max-width:34ch}
+.gatecard code{font-family:var(--mono);font-size:.82em;color:var(--fg);background:var(--sunk);padding:1px 5px;border-radius:5px;direction:ltr;unicode-bidi:embed}
+.gatebtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border-radius:14px;background:var(--accent);color:var(--accent-fg);font-weight:700;font-size:1rem;cursor:pointer}
+.gatebtn:focus-within{outline:3px solid var(--accent);outline-offset:3px}
+.gatebtn[aria-disabled="true"]{opacity:.6;pointer-events:none}
+.gatemsg{font-size:.88rem;padding:10px 12px;border-radius:10px;background:var(--leaf);color:var(--fg)!important;max-width:none!important;width:100%}
+.gatemsg.bad{background:#fdf3f1;color:var(--danger)!important}
+.gatefresh{min-height:40px;border:0;background:none;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+/* Price variants */
+.variants{display:grid;gap:6px}
+.variants:empty{display:none}
+.addvar{justify-self:start;display:inline-flex;align-items:center;gap:6px;min-height:36px!important;padding:0 12px;border:1px dashed var(--accent);background:var(--leaf);color:var(--accent);font-weight:600;font-size:.84rem;border-radius:10px}
+.addvar:disabled{opacity:.5;cursor:default}
+.varhead,.varrow{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) 38px;gap:6px;align-items:center}
+.varhead span{font-size:.74rem;font-weight:600;color:var(--muted)}
+.vdel{min-height:38px!important;width:38px;padding:0;border-radius:9px;font-size:1.15rem;line-height:1;color:var(--danger)}
+.varfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.varcount{font-size:.76rem;color:var(--muted)}
+.vtable{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.vtable>div{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr))}
+.vtable>div>*{padding:7px 6px;min-width:0;overflow-wrap:anywhere}
+.vtable .vhead{background:var(--sunk)}
+.vtable .vhead span{font-size:.7rem;font-weight:600;color:var(--muted)}
+.vtable .vrow{border-top:1px solid var(--line);align-items:center}
+.vtable .vn{font-size:.84rem;font-weight:600}
+.vtable b{font-family:var(--mono);font-weight:500;font-variant-numeric:tabular-nums;font-size:.8rem}
+.vtable .main{background:var(--leaf)}
+/* Language picker on every page */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.langpick{position:relative;display:inline-flex;align-items:center;gap:5px;flex:none;min-height:38px;padding:0 10px;border:1px solid var(--accent);border-radius:10px;background:var(--leaf);color:var(--accent);font-weight:700;font-size:.88rem;line-height:1}
+.langpick:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.langpick .lpcode{min-width:1.3em;text-align:center}
+.langpick select{position:absolute;inset:0;width:100%!important;height:100%;min-height:0!important;padding:0!important;margin:0;opacity:0;cursor:pointer;font-size:16px}
+.wrap > *{min-width:0;grid-template-columns:minmax(0,1fr)}
+.navrow{gap:8px}
+.navrow button{min-width:0;padding:0 10px}
+.cardsbar{flex-wrap:nowrap;gap:8px;min-width:0}
+.topbar{min-width:0}
+.cardsbar .homebtn,.cardsbar>button{padding:0 10px;gap:5px}
+.langpick{padding:0 8px;gap:4px}
+.cardsbar>*{flex:none}
+.cardsbar .counter{flex:1 1 auto;min-width:0;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.toast{max-width:calc(100% - 32px);text-align:center;border-radius:16px;position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:.88rem;font-weight:500}
+@media (prefers-reduced-motion:no-preference){.pcard{transition:transform .15s}}
+/* Sign-in screen + cloud save status */
+.loginwrap{max-width:560px;margin:0 auto;padding:max(12vh,24px) 16px 48px}
+.loginform{text-align:start}
+.loginform .field{width:100%;justify-self:stretch;text-align:start}
+.loginform h1{text-align:center}
+.syncbadge{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:20;background:#e3f2d9;color:#1b5e20;border:1px solid #cfe3c4;font-size:.8rem;font-weight:600;padding:5px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12);max-width:calc(100% - 32px);text-align:center}
+.syncbadge.bad{background:#fdf3f1;color:var(--danger);border-color:#f0c7bf}
+.bootmsg{display:grid;gap:14px;justify-items:center;text-align:center;padding:0 24px;max-width:420px}
+.bootmsg p{margin:0}
+.signout{justify-self:center;min-height:40px;border:0;background:none;color:var(--muted);font-weight:600;font-size:.88rem;text-decoration:underline;text-underline-offset:3px}
+</style>
+<script>
+var LANG = (function(){ try { var v = localStorage.getItem('pcm.lang'); if (v === '"en"' || v === '"ar"' || v === '"zh"') return JSON.parse(v); } catch(e){} var n = navigator.language || ''; return /^ar/i.test(n) ? 'ar' : /^zh/i.test(n) ? 'zh' : 'en'; })();
+// Simplified Chinese, keyed by the English text. {0} stands for any text, {#0} for a number.
+var ZH = {"Add new product": "添加新产品", "Enter details, photos and supplier card": "填写信息、照片和供应商名片", "Product Database": "产品数据库", "Browse saved products": "浏览已保存的产品", "Supplier Database": "供应商数据库", "Products grouped by supplier": "按供应商分组的产品", "Profit calculator": "利润计算器", "Work out profit in SAR": "以沙特里亚尔计算利润", "Home": "首页", "Profit calculator · SAR": "利润计算器 · 沙特里亚尔", "Product": "产品", "Enter cost manually": "手动输入成本", "Unit cost (SAR)": "单价（沙特里亚尔）", "Quantity": "数量", "Overhead / shipping": "杂费 / 运费", "Selling price / unit (inc. 15% VAT)": "单位售价（含 15% 增值税）", "Enter the selling price including 15% VAT. VAT is removed before profit is worked out. Overhead is added as a percentage of the product cost.": "请输入含 15% 增值税的售价。计算利润前会先扣除增值税，杂费按产品成本的百分比计算。", "Total profit": "总利润", "Product cost": "产品成本", "Total cost": "总成本", "Sales (inc. VAT)": "销售额（含增值税）", "VAT (15%)": "增值税（15%）", "Revenue (ex. VAT)": "收入（不含增值税）", "Landed cost / unit": "单位到岸成本", "Profit / unit": "单位利润", "Break-even price / unit (inc. VAT)": "单位保本价（含增值税）", "Date added:": "添加日期：", "Product name": "产品名称", "Enter a product name.": "请输入产品名称。", "Category": "类别", "Supplier": "供应商", "Factory location": "工厂地址", "Store ID": "店铺编号", "Kitchenware": "厨房用品", "Electronics": "电子产品", "Apparel": "服装", "Home décor": "家居装饰", "Packaging": "包装", "Tools & hardware": "工具与五金", "Beauty": "美妆", "Toys": "玩具", "Product link": "产品链接", "Scan QR": "扫码", "Specifications": "产品参数", "Dimensions": "尺寸", "Weight": "重量", "Material": "材质", "Cost & unit": "成本与单位", "Unit cost": "单价", "MOQ": "起订量", "Unit of measurement": "计量单位", "pcs": "件", "set": "套", "box": "盒", "carton": "箱", "pair": "双", "dozen": "打", "kg": "千克", "g": "克", "m": "米", "roll": "卷", "L": "升", "Rates": "汇率", "Remarks": "备注", "Generate card": "生成卡片", "Clear": "清空", "Search supplier, product or factory": "搜索供应商、产品或工厂", "+ Add": "+ 添加", "Back": "上一个", "Share": "分享", "Next": "下一个", "Close": "关闭", "A man cutting grass with an electric lawn mower": "一名男子用电动割草机修剪草坪", "Add product photo": "添加产品照片", "Product photo": "产品照片", "Add supplier business card": "添加供应商名片", "Supplier business card": "供应商名片", "Scan QR with camera": "用相机扫描二维码", "Read QR from a saved image or screenshot": "从已保存的图片或截图中识别二维码", "Read QR from a saved image": "从已保存的图片中识别二维码", "Currency": "货币", "Product database": "产品数据库", "Previous card": "上一张卡片", "Share this product as an image": "以图片形式分享此产品", "Next card": "下一张卡片", "Backup & transfer": "备份与迁移", "Export backup": "导出备份", "Import backup": "导入备份", "One ZIP file with the product data (CSV) and all images.": "一个 ZIP 文件，包含产品数据（CSV）和所有图片。", "Variant": "规格", "A save prompt is already open": "保存窗口已打开", "A save prompt is already open.": "保存窗口已打开。", "Add price variants (sizes, colours…)": "添加价格规格（尺寸、颜色…）", "Add variant": "添加规格", "Added {#0} images to {#1} products.": "已为 {1} 个产品添加 {0} 张图片。", "An export is already in progress.": "正在导出，请稍候。", "An import is already in progress.": "正在导入，请稍候。", "Backup imported": "备份已导入", "Before you start, import your most recent backup file": "开始之前，请导入最新的备份文件", "Business card": "名片", "Card created": "卡片已创建", "Card created, but this browser could not save it": "卡片已创建，但此浏览器无法保存", "Card deleted": "卡片已删除", "Card updated": "卡片已更新", "Check your Downloads folder.": "请查看“下载”文件夹。", "Choose a backup ZIP file exported from this app.": "请选择从本应用导出的备份 ZIP 文件。", "Choose backup file": "选择备份文件", "Copy": "复制", "Couldn't copy here. Open Edit to select the text.": "无法在此复制。请打开“编辑”选择文字。", "Couldn't create the image. Try again.": "无法生成图片，请重试。", "Couldn't read that file. Choose the backup ZIP exported from this app.": "无法读取该文件。请选择从本应用导出的备份 ZIP 文件。", "Couldn't read that file. Use the CSV and ZIP files exported from this app.": "无法读取该文件。请使用从本应用导出的 CSV 和 ZIP 文件。", "Couldn't save to the app's database. Export a backup to keep your data safe.": "无法保存到应用数据库。请导出备份以确保数据安全。", "Couldn't save. Export a backup to keep your data safe.": "保存失败。请导出备份以确保数据安全。", "Currency (for all variants)": "货币（适用于所有规格）", "Date added": "添加日期", "Delete": "删除", "Details copied": "信息已复制", "Each variant needs a unit cost, for example 12.50.": "每个规格都需要填写单价，例如 12.50。", "Edit": "编辑", "Enlarge photo": "放大照片", "Example": "示例", "Export cancelled.": "已取消导出。", "Export failed. Try again.": "导出失败，请重试。", "Exported {#0} products and {#1} images.": "已导出 {0} 个产品和 {1} 张图片。", "Factory": "工厂", "Factory location and Store ID filled from this supplier. Any change you make updates all of their products.": "已根据该供应商自动填写工厂地址和店铺编号。您所做的任何修改都会更新该供应商的所有产品。", "I don't have a backup yet. Start with an empty database": "我还没有备份，使用空数据库开始", "Image ready to share": "图片已可分享", "Import your latest backup": "导入最新备份", "Imported {#0} products ({#1} new, {#2} updated) and {#3} images.": "已导入 {0} 个产品（新增 {1} 个，更新 {2} 个）和 {3} 张图片。", "Importing…": "正在导入…", "Link": "链接", "Link captured from QR code.": "已从二维码获取链接。", "Margin {0}% · Markup {1}%": "利润率 {0}% · 加价率 {1}%", "New supplier. Factory location and Store ID will be remembered for next time.": "新供应商。工厂地址和店铺编号将被保存，下次自动填写。", "Next photo": "下一张照片", "No QR code found. Crop the photo or screenshot to the code and try again. WeChat Mini Program codes (the round ones) can only be read inside WeChat.": "未找到二维码。请将照片或截图裁剪到二维码区域后重试。微信小程序码（圆形）只能在微信内识别。", "No cards yet. Tap + Add to create your first card.": "还没有卡片。点击“+ 添加”创建第一张卡片。", "No file picker is available on this phone.": "此手机上没有可用的文件选择器。", "No product photo": "暂无产品照片", "No products saved yet": "尚未保存任何产品", "No products saved yet. Add a product with a supplier name to see it here.": "尚未保存任何产品。添加带有供应商名称的产品后即可在此查看。", "No supplier": "无供应商", "No supplier matches that search.": "没有符合搜索条件的供应商。", "None of the images in this ZIP match a saved product. Import the CSV file together with the ZIP.": "此 ZIP 中的图片与已保存的产品都不匹配。请将 CSV 文件与 ZIP 一起导入。", "One file couldn't be read as an image. Try a JPG or PNG.": "有一个文件无法作为图片读取。请尝试 JPG 或 PNG 格式。", "Preparing file…": "正在准备文件…", "Preparing…": "正在准备…", "Press and hold the image to save or share it.": "长按图片即可保存或分享。", "Price variants": "价格规格", "Products without a supplier name": "未填写供应商名称的产品", "Profit": "利润", "QR code read, but it isn't a web link. The text was added as is.": "已识别二维码，但它不是网页链接，已按原文添加。", "Reading QR code…": "正在识别二维码…", "Reading backup…": "正在读取备份…", "Remove variant {#0}": "删除规格 {0}", "Saved {#0} products and {#1} images to {2}.": "已将 {0} 个产品和 {1} 张图片保存到 {2}。", "Storage is full. Export a backup, then delete some photos or products.": "存储空间已满。请先导出备份，再删除部分照片或产品。", "Tap to confirm": "再次点击确认", "That file couldn't be read as an image. Try a JPG or PNG.": "该文件无法作为图片读取。请尝试 JPG 或 PNG 格式。", "The CSV file has no product rows.": "该 CSV 文件中没有产品数据。", "The QR reader didn't load. Check your connection and reload the page.": "二维码识别工具未能加载。请检查网络连接后重新加载页面。", "The backup couldn't be saved. Try again, or choose another place to save it.": "备份无法保存。请重试，或选择其他保存位置。", "The export tool didn't load. Check your connection and reload the page.": "导出工具未能加载。请检查网络连接后重新加载页面。", "The import tool didn't load. Check your connection and reload the page.": "导入工具未能加载。请检查网络连接后重新加载页面。", "There are no products to export yet.": "还没有可导出的产品。", "This CSV had no images; use the backup ZIP to bring photos too.": "此 CSV 不包含图片；如需同时导入照片，请使用备份 ZIP。", "This CSV is missing the \"name\" column. Use a file exported from this app.": "此 CSV 缺少 \"name\" 列。请使用从本应用导出的文件。", "This phone has {#0} saved product. Anything you changed on this phone after the backup was made is kept.": "此手机已保存 {0} 个产品。备份之后在此手机上所做的修改都会保留。", "This phone has {#0} saved products. Anything you changed on this phone after the backup was made is kept.": "此手机已保存 {0} 个产品。备份之后在此手机上所做的修改都会保留。", "This screen can't save files. Open the app in the Claude app or in your phone's browser and try again.": "此界面无法保存文件。请在 Claude 应用或手机浏览器中打开本应用后重试。", "Unit": "单位", "Unit cost must be a number, for example 12.50.": "单价必须是数字，例如 12.50。", "Update card": "更新卡片", "Variant (size, colour…)": "规格（尺寸、颜色…）", "Variant {#0}": "规格 {0}", "Variant {#0} name": "规格 {0} 名称", "Variant {#0} unit cost": "规格 {0} 单价", "WeChat QR code read. It opens only in the WeChat app, so it was saved as text.": "已识别微信二维码。它只能在微信中打开，因此已保存为文字。", "WeChat link captured from QR code.": "已从二维码获取微信链接。", "Your phone's browser storage is full, so some data may not be kept after closing the app.": "手机浏览器存储空间已满，关闭应用后部分数据可能无法保留。", "entered in": "录入货币", "from ": "低至 ", "of": "/", "so this phone has the latest products.": "以确保此手机拥有最新的产品数据。", "{#0} kept as they are, because this phone has a newer version.": "{0} 个产品保持不变，因为此手机上的版本更新。", "{#0} of {#1}": "{0} / {1}", "{#0} saved product": "已保存 {0} 个产品", "{#0} saved products": "已保存 {0} 个产品", "{#0} supplier": "{0} 个供应商", "{#0} suppliers": "{0} 个供应商", "Language / اللغة": "Language / اللغة / 语言", "Loading your data…": "正在加载数据…", "Sign out": "退出登录"};
+var ZH_PATTERNS = Object.keys(ZH).filter(function(k){ return /\{#?\d\}/.test(k); }).map(function(k){
+  var order = [];
+  var src = k.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{(#?)(\d)\}/g, function(_, num, d){ order.push(d); return num ? '(-?[\\d.,]+)' : '([\\s\\S]*?)'; });
+  return {re: new RegExp('^' + src + '$'), order: order, zh: ZH[k], weight: k.replace(/\{#?\d\}/g, '').length};
+}).sort(function(a, b){ return b.weight - a.weight; });
+function zh(en){
+  if (Object.prototype.hasOwnProperty.call(ZH, en)) return ZH[en];
+  for (var i = 0; i < ZH_PATTERNS.length; i++) {
+    var p = ZH_PATTERNS[i], m = p.re.exec(en);
+    if (m) { var out = p.zh; p.order.forEach(function(d, j){ out = out.split('{' + d + '}').join(m[j + 1]); }); return out; }
   }
+  return en;
 }
-
-// Get data from Firestore
-async function getData() {
-  const querySnapshot = await getDocs(collection(db, 'users'));
-  const dataList = document.getElementById('data-list');
-  dataList.innerHTML = '';
-
-  querySnapshot.forEach((doc) => {
-    const data = doc.data();
-    const listItem = document.createElement('li');
-    listItem.textContent = `${data.name}, ${data.age}`;
-    dataList.appendChild(listItem);
-  });
-}
-
-// Expose functions to the global scope
-window.addData = addData;
-window.getData = getData;
-
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyC79-qK3awVbKmHLN0qUMhH7X2yNjc5DDw",
-    authDomain: "highscores-fce6c.firebaseapp.com",
-    projectId: "highscores-fce6c",
-    storageBucket: "highscores-fce6c.firebasestorage.app",
-    messagingSenderId: "285114216990",
-    appId: "1:285114216990:web:bd88d7d5aea169402ab40f"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+function L(en, ar){ return LANG === 'ar' ? ar : LANG === 'zh' ? zh(en) : en; }
+document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
 </script>
 
-  </script>
+<div class="wrap">
+  <section class="gate" id="gatePage" aria-labelledby="gateTitle"></section>
+  <section class="home" id="homePage" aria-label="الرئيسية" hidden>
+    <div class="langswitch" role="group" aria-label="Language / اللغة">
+      <button type="button" data-lang="en" lang="en">English</button>
+      <button type="button" data-lang="ar" lang="ar">العربية</button>
+      <button type="button" data-lang="zh" lang="zh">中文</button>
+    </div>
+    <figure class="hero" aria-label="رجل يقصّ العشب بجزازة عشب كهربائية">
+      <svg viewBox="0 0 360 210" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <rect width="360" height="210" rx="16" fill="#e6f4dd"/>
+        <circle cx="302" cy="44" r="18" fill="#f6d36b"/>
+        <path d="M0 150 Q70 112 150 140 T300 128 T360 136 V210 H0Z" fill="#cfe8bf"/>
+        <rect y="160" width="360" height="50" fill="#79bf57"/>
+        <g fill="#8fd06c"><rect x="0" y="160" width="40" height="50"/><rect x="80" y="160" width="40" height="50"/><rect x="160" y="160" width="30" height="50"/></g>
+        <g fill="#4f9c33"><path d="M250 164l4-16 4 16zM262 164l3-20 4 20zM274 164l4-14 4 14zM286 164l3-19 4 19zM298 164l4-15 4 15zM310 164l3-21 4 21zM322 164l4-16 4 16zM334 164l3-18 4 18zM346 164l4-15 4 15z"/></g>
+        <path d="M150 116 C140 140 124 176 92 184 S34 194 0 190" fill="none" stroke="#f2b33d" stroke-width="2.6" stroke-linecap="round"/>
+        <line x1="203" y1="160" x2="151" y2="113" stroke="#37474f" stroke-width="4.5" stroke-linecap="round"/>
+        <line x1="146" y1="104" x2="155" y2="121" stroke="#263238" stroke-width="5" stroke-linecap="round"/>
+        <path d="M184 172 v-8 a10 10 0 0 1 10-10 h38 a14 14 0 0 1 14 14 v4z" fill="#e4572e"/>
+        <rect x="200" y="148" width="22" height="9" rx="4" fill="#c2411f"/>
+        <rect x="182" y="170" width="66" height="6" rx="3" fill="#37474f"/>
+        <circle cx="193" cy="180" r="8" fill="#263238"/><circle cx="193" cy="180" r="3" fill="#b0bec5"/>
+        <circle cx="238" cy="180" r="8" fill="#263238"/><circle cx="238" cy="180" r="3" fill="#b0bec5"/>
+        <path d="M116 122 L104 168" stroke="#37474f" stroke-width="10" stroke-linecap="round"/>
+        <path d="M124 122 L140 166" stroke="#455a64" stroke-width="10" stroke-linecap="round"/>
+        <ellipse cx="100" cy="171" rx="9" ry="4.5" fill="#263238"/>
+        <ellipse cx="145" cy="169" rx="9" ry="4.5" fill="#263238"/>
+        <rect x="105" y="76" width="28" height="50" rx="10" fill="#2e7d32"/>
+        <path d="M126 84 L150 110" stroke="#2e7d32" stroke-width="8" stroke-linecap="round"/>
+        <path d="M120 88 L146 114" stroke="#276b2b" stroke-width="8" stroke-linecap="round"/>
+        <circle cx="150" cy="111" r="4.5" fill="#c98d5b"/>
+        <circle cx="146" cy="115" r="4.5" fill="#b77d4e"/>
+        <rect x="114" y="70" width="10" height="9" rx="3" fill="#c98d5b"/>
+        <circle cx="120" cy="60" r="12" fill="#c98d5b"/>
+        <path d="M107 58 a13 12 0 0 1 26 0z" fill="#1b5e20"/>
+        <path d="M130 57 h10 a2 2 0 0 1 0 4 h-10z" fill="#1b5e20"/>
+        <circle cx="125" cy="62" r="1.4" fill="#263238"/>
+      </svg>
+    </figure>
+    <button type="button" class="tile primary" id="goAdd">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+      <span><strong>إضافة منتج جديد</strong><small>أدخل البيانات والصور وبطاقة المورّد</small></span>
+    </button>
+    <button type="button" class="tile" id="goDb">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>
+      <span><strong>قاعدة بيانات المنتجات</strong><small id="dbCount">تصفّح المنتجات المحفوظة</small></span>
+    </button>
+    <button type="button" class="tile" id="goSup">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l6 3V9l6 3V5h6v16z"/><path d="M7 17h2M12 17h2M17 17h1"/></svg></span>
+      <span><strong>قاعدة بيانات الموردين</strong><small id="supCount">المنتجات مجمّعة حسب المورّد</small></span>
+    </button>
+    <button type="button" class="tile" id="goCalc">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h2M16 15v3"/></svg></span>
+      <span><strong>حاسبة الأرباح</strong><small>احسب الربح بالريال السعودي</small></span>
+    </button>
+    <div class="datatools">
+      <p class="eyebrow">النسخ الاحتياطي والنقل</p>
+      <div class="dtbtns">
+        <button type="button" id="exportBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 19h14"/></svg><span>تصدير نسخة احتياطية</span></button>
+        <label class="dtimport" for="importFile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 19h14"/></svg><span>استيراد نسخة احتياطية</span></label>
+        <input id="importFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,.csv,text/csv" hidden>
+      </div>
+      <p class="hint">ملف ZIP واحد يحتوي على بيانات المنتجات (CSV) وجميع الصور.</p>
+      <p class="dtmsg" id="dtMsg" hidden role="status"></p>
+    </div>
+    <button type="button" class="signout" id="signOutBtn">Sign out</button>
+  </section>
+  <section id="calcPage" style="display:grid;gap:16px" hidden aria-label="حاسبة الأرباح">
+    <div class="topbar"><button type="button" class="homebtn" id="calcHome"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>الرئيسية</button><label class="langpick"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z"/></svg><span class="lpcode" aria-hidden="true">EN</span><svg class="lpcaret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><select data-langpick aria-label="Language / اللغة / 语言"><option value="en" lang="en">English</option><option value="ar" lang="ar">العربية</option><option value="zh" lang="zh">中文</option></select></label></div>
+    <div class="panel">
+      <p class="eyebrow">حاسبة الأرباح · ريال سعودي</p>
+      <div class="field"><label for="cProduct">المنتج</label>
+        <select id="cProduct"><option value="">إدخال التكلفة يدويًا</option></select>
+      </div>
+      <div class="field" id="cVariantField" hidden><label for="cVariant">الخيار</label><select id="cVariant"></select></div>
+      <div class="grid2">
+        <div class="field"><label for="cCost">تكلفة الوحدة (ريال)</label><div class="money"><span style="font-size:.72rem">ر.س</span><input id="cCost" class="num" inputmode="decimal"></div></div>
+        <div class="field"><label for="cQty">الكمية</label><input id="cQty" class="num" inputmode="numeric"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="cOver">المصاريف / الشحن</label><div class="money pct"><input id="cOver" class="num" inputmode="decimal"><span class="suffix">%</span></div></div>
+        <div class="field"><label for="cSell">سعر بيع الوحدة (شامل ضريبة القيمة المضافة 15%)</label><div class="money"><span style="font-size:.72rem">ر.س</span><input id="cSell" class="num" inputmode="decimal"></div></div>
+      </div>
+      <p class="hint" id="cHint">أدخل سعر البيع شاملًا ضريبة القيمة المضافة 15%. تُخصم الضريبة قبل حساب الربح، وتُضاف المصاريف كنسبة من تكلفة المنتج.</p>
+    </div>
+    <div class="result" id="cResult" aria-live="polite">
+      <div class="profit"><small>إجمالي الربح</small><b id="rProfit">—</b><span id="rMargin" class="chip"></span></div>
+      <dl class="rows">
+        <div><dt>تكلفة المنتج</dt><dd id="rCost">—</dd></div>
+        <div><dt>المصاريف / الشحن</dt><dd id="rOver">—</dd></div>
+        <div><dt>التكلفة الإجمالية</dt><dd id="rTotal">—</dd></div>
+        <div><dt>المبيعات (شامل الضريبة)</dt><dd id="rGross">—</dd></div>
+        <div><dt>ضريبة القيمة المضافة (15%)</dt><dd id="rVat">—</dd></div>
+        <div><dt>الإيرادات (بدون الضريبة)</dt><dd id="rRev">—</dd></div>
+        <div><dt>التكلفة الفعلية للوحدة</dt><dd id="rUnitCost">—</dd></div>
+        <div><dt>الربح للوحدة</dt><dd id="rUnitProfit">—</dd></div>
+        <div><dt>سعر التعادل للوحدة (شامل الضريبة)</dt><dd id="rBreak">—</dd></div>
+      </dl>
+    </div>
+  </section>
+  <div id="formPage" style="display:grid;gap:16px" hidden>
+  <div class="topbar"><button type="button" class="homebtn" id="formHome"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>الرئيسية</button><label class="langpick"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z"/></svg><span class="lpcode" aria-hidden="true">EN</span><svg class="lpcaret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><select data-langpick aria-label="Language / اللغة / 语言"><option value="en" lang="en">English</option><option value="ar" lang="ar">العربية</option><option value="zh" lang="zh">中文</option></select></label></div>
+  <div class="cols">
+    <form class="panel" id="form" novalidate>
+      <div class="formhead"><p class="eyebrow">المنتج</p><span class="dateadded">تاريخ الإضافة: <b id="dateAdded"></b></span></div>
+      <div class="field"><label for="name">اسم المنتج <span class="req" aria-hidden="true">*</span></label><input id="name" required aria-required="true" aria-describedby="nameErr"><p class="fielderr" id="nameErr" hidden>أدخل اسم المنتج.</p></div>
+      <div class="grid2">
+        <div class="field"><label for="category">الفئة</label><input id="category" list="cats"></div>
+        <div class="field"><label for="supplier">المورّد</label><input id="supplier" list="sups" autocomplete="off"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="factory">موقع المصنع</label><input id="factory" autocomplete="off"></div>
+        <div class="field"><label for="storeId">رقم المتجر</label><input id="storeId" autocomplete="off"></div>
+      </div>
+      <p class="hint" id="supNote" hidden></p>
+      <datalist id="sups"></datalist>
+      <datalist id="cats"><option>أدوات المطبخ</option><option>إلكترونيات</option><option>ملابس</option><option>ديكور منزلي</option><option>تغليف</option><option>عِدد وأدوات</option><option>تجميل</option><option>ألعاب</option></datalist>
+
+      <div class="uploads">
+        <label class="upbtn" for="image" aria-label="إضافة صورة المنتج" title="صورة المنتج">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <img id="thumb" alt="" hidden><span class="pbadge" id="photoCount" hidden></span>
+        </label>
+        <input id="image" type="file" accept="image/*" multiple hidden>
+        <label class="upbtn" for="bizFile" aria-label="إضافة بطاقة عمل المورّد" title="بطاقة عمل المورّد">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.6 1.7-2.4 3-2.4s2.4.8 3 2.4M14 10h4M14 13.5h3"/></svg>
+          <img id="bizThumb" alt="" hidden>
+        </label>
+        <input id="bizFile" type="file" accept="image/*" hidden>
+      </div>
+      <div class="photostrip" id="photoStrip" hidden></div>
+
+      <div class="field">
+        <label for="url">رابط المنتج</label>
+        <div class="urlrow">
+          <input id="url" type="url" inputmode="url" autocomplete="off">
+          <label for="qrFile" title="مسح رمز QR بالكاميرا">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="13" width="4" height="4"/><path d="M13 7h4v4M7 13v4h4"/></svg>
+            مسح QR
+          </label>
+          <label for="qrPick" title="قراءة رمز QR من صورة محفوظة أو لقطة شاشة" aria-label="قراءة رمز QR من صورة محفوظة">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+          </label>
+        </div>
+        <input id="qrFile" type="file" accept="image/*" capture="environment" hidden>
+        <input id="qrPick" type="file" accept="image/*" hidden>
+        <p class="hint" id="qrMsg" hidden></p>
+      </div>
+
+      <p class="eyebrow" style="margin-top:6px">المواصفات</p>
+      <div class="grid2">
+        <div class="field"><label for="dims">الأبعاد</label><input id="dims" autocomplete="off"></div>
+        <div class="field"><label for="weight">الوزن</label><input id="weight" autocomplete="off"></div>
+      </div>
+      <div class="field"><label for="material">المادة</label><input id="material" autocomplete="off"></div>
+
+      <p class="eyebrow" style="margin-top:6px">التكلفة والوحدة</p>
+      <div class="field"><label for="cost" id="costLabel">تكلفة الوحدة</label>
+        <div class="costrow" id="costRow">
+          <select id="cur" aria-label="العملة"><option value="RMB">RMB</option><option value="USD">USD</option></select>
+          <div class="money" id="costMoney"><span id="curSym">¥</span><input id="cost" class="num" inputmode="decimal"></div>
+        </div>
+      </div>
+      <div class="variants" id="variantsBox"></div>
+      <div class="grid2">
+        <div class="field"><label for="moq">الحد الأدنى للطلب</label><input id="moq" type="text" autocomplete="off"></div>
+        <div class="field"><label for="uom">وحدة القياس</label>
+          <input id="uom" list="uoms">
+          <datalist id="uoms"><option>قطعة</option><option>طقم</option><option>علبة</option><option>كرتون</option><option>زوج</option><option>دزينة</option><option>كجم</option><option>جم</option><option>م</option><option>لفة</option><option>لتر</option></datalist>
+        </div>
+      </div>
+
+      <div class="rates" hidden>
+        <span class="hint" style="color:var(--fg);font-weight:600">أسعار الصرف</span>
+        <label for="rUSD">1 USD = <input id="rUSD" class="num" inputmode="decimal"> RMB</label>
+        <label for="rSAR">1 USD = <input id="rSAR" class="num" inputmode="decimal"> SAR</label>
+      </div>
+
+      <div class="field"><label for="remarks">ملاحظات</label><textarea id="remarks" rows="3"></textarea></div>
+      <p class="err" id="err" hidden></p>
+      <div class="btns">
+        <button type="submit" class="primary" id="saveBtn">إنشاء البطاقة</button>
+        <button type="button" id="clearBtn">مسح</button>
+      </div>
+    </form>
+
+  </div>
+
+  </div>
+  <section id="supPage" style="display:grid;gap:16px" hidden aria-label="قاعدة بيانات الموردين">
+    <div class="cardsbar">
+      <button type="button" class="homebtn" id="supHome"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>الرئيسية</button>
+      <span class="counter" id="supCounter"></span>
+      <label class="langpick"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z"/></svg><span class="lpcode" aria-hidden="true">EN</span><svg class="lpcaret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><select data-langpick aria-label="Language / اللغة / 语言"><option value="en" lang="en">English</option><option value="ar" lang="ar">العربية</option><option value="zh" lang="zh">中文</option></select></label>
+    </div>
+    <h2 class="pagetitle">قاعدة بيانات الموردين</h2>
+    <div class="field"><label for="supSearch">ابحث عن مورّد أو منتج أو مصنع</label><input id="supSearch" type="search" autocomplete="off"></div>
+    <div id="supList" class="suplist"></div>
+  </section>
+  <section class="saved" id="savedList" style="display:grid;gap:16px" hidden aria-label="قاعدة بيانات المنتجات">
+    <div class="cardsbar">
+      <button type="button" class="homebtn" id="cardsHome"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>الرئيسية</button>
+      <span class="counter" id="count" aria-live="polite"></span>
+      <label class="langpick"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z"/></svg><span class="lpcode" aria-hidden="true">EN</span><svg class="lpcaret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><select data-langpick aria-label="Language / اللغة / 语言"><option value="en" lang="en">English</option><option value="ar" lang="ar">العربية</option><option value="zh" lang="zh">中文</option></select></label>
+      <button type="button" id="toForm">+ إضافة</button>
+    </div>
+    <h2 class="pagetitle titleband">قاعدة بيانات المنتجات</h2>
+    <div class="gallery" id="gallery"></div>
+    <div class="navrow">
+      <button type="button" id="prevBtn" aria-label="البطاقة السابقة">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>السابق</button>
+      <button type="button" id="shareBtn" class="sharebtn" aria-label="مشاركة هذا المنتج كصورة">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>مشاركة</button>
+      <button type="button" id="nextBtn" aria-label="البطاقة التالية">التالي
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+<div class="viewer" id="viewer" hidden><button type="button" id="viewerClose">إغلاق</button><img id="viewerImg" alt="بطاقة عمل المورّد"><p id="viewerNote" hidden></p></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script>
+/* Built-in ZIP fallback for the offline version: used only when the JSZip library hasn't been downloaded yet.
+   Writes uncompressed ZIP files; reads uncompressed and standard compressed (deflate) ZIP files. */
+if (typeof JSZip !== 'function') (function(){
+  const CRC = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  const b64ToBytes = s => { const bin = atob(s), out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; };
+  const bytesToB64 = b => { let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  function Entry(name, bytes){ this.name = name; this.dir = false; this._b = bytes; }
+  Entry.prototype.async = function(type){ return Promise.resolve(type === 'string' ? dec.decode(this._b) : type === 'base64' ? bytesToB64(this._b) : this._b); };
+  function Zip(root, prefix){ this.files = root ? root.files : {}; this._p = prefix || ''; }
+  Zip.prototype.folder = function(n){ return new Zip(this, this._p + n.replace(/\/?$/, '/')); };
+  Zip.prototype.file = function(n, data, opt){
+    const bytes = typeof data === 'string' ? (opt && opt.base64 ? b64ToBytes(data) : enc.encode(data)) : new Uint8Array(data);
+    this.files[this._p + n] = new Entry(this._p + n, bytes); return this;
+  };
+  Zip.prototype.generateAsync = function(){
+    const d = new Date(), time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    const parts = [], central = []; let offset = 0;
+    for (const e of Object.values(this.files)) {
+      const name = enc.encode(e.name), crc = crc32(e._b), size = e._b.length;
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+      h.setUint16(10, time, true); h.setUint16(12, date, true); h.setUint32(14, crc, true); h.setUint32(18, size, true); h.setUint32(22, size, true);
+      h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+      parts.push(h.buffer, name, e._b);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+      c.setUint16(12, time, true); c.setUint16(14, date, true); c.setUint32(16, crc, true); c.setUint32(20, size, true); c.setUint32(24, size, true);
+      c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+      central.push(c.buffer, name);
+      offset += 30 + name.length + size;
+    }
+    const cdSize = central.reduce((n, x) => n + (x.byteLength || x.length), 0), count = Object.keys(this.files).length;
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, count, true); end.setUint16(10, count, true); end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+    return Promise.resolve(new Blob([...parts, ...central, end.buffer], {type: 'application/zip'}));
+  };
+  Zip.loadAsync = async function(blob){
+    const buf = new Uint8Array(await blob.arrayBuffer()), v = new DataView(buf.buffer);
+    let e = -1; for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (v.getUint32(i, true) === 0x06054b50) { e = i; break; }
+    if (e < 0) throw new Error('Not a ZIP file');
+    const z = new Zip(), count = v.getUint16(e + 10, true); let p = v.getUint32(e + 16, true);
+    for (let n = 0; n < count; n++) {
+      if (v.getUint32(p, true) !== 0x02014b50) break;
+      const method = v.getUint16(p + 10, true), csize = v.getUint32(p + 20, true), nl = v.getUint16(p + 28, true), xl = v.getUint16(p + 30, true), cl = v.getUint16(p + 32, true), lo = v.getUint32(p + 42, true);
+      const name = dec.decode(buf.subarray(p + 46, p + 46 + nl));
+      const start = lo + 30 + v.getUint16(lo + 26, true) + v.getUint16(lo + 28, true), raw = buf.subarray(start, start + csize);
+      p += 46 + nl + xl + cl;
+      if (name.endsWith('/')) continue;
+      let bytes;
+      if (method === 0) bytes = raw.slice();
+      else if (method === 8 && typeof DecompressionStream === 'function') bytes = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+      else continue;
+      z.files[name] = new Entry(name, bytes);
+    }
+    return z;
+  };
+  window.JSZip = Zip;
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* Storage: Supabase (online database + private photo storage), signed in as the single admin account.
+   Keeps the same APP_STORE get/set interface the app already uses. Everything is held in memory and
+   changes are written to Supabase in the background; photos are uploaded to the "product-images" bucket. */
+(function(){
+  const SB_URL = 'https://bhfgwlkzkbwcwyoypwhy.supabase.co';
+  const SB_KEY = 'sb_publishable_9YylflVQca-62NHsBKSTeA_GY896nj3';   // public key: safe in the page, access is limited by the database rules
+  const BUCKET = 'product-images', LOGIN_DOMAIN = 'product-card-maker.app';
+  const CARDS = 'pcm.cards.v1', ORDER_KEY = 'meta:cardOrder', SIGN_SECONDS = 60 * 60 * 24 * 7;
+  const T = (en, ar, zh) => LANG === 'ar' ? ar : LANG === 'zh' ? zh : en;
+
+  let sb = null, timer = null, running = null, warned = false, lastOrder = '';
+  const cache = {}, dirty = new Set();
+  const savedSig = new Map();     // card id -> signature last written
+  const savedPaths = new Map();   // card id -> photo paths the saved row points to
+  const urlToPath = new Map();    // signed URL -> storage path
+  const uploaded = new Map();     // card id + data URL -> storage path (so a photo is uploaded once)
+
+  const isImgKey = k => k === 'img' || k === 'biz';
+  const refsOf = c => [...(Array.isArray(c.imgs) ? c.imgs : []), c.img, c.biz].filter(s => typeof s === 'string' && s);
+  const short = s => typeof s !== 'string' ? '' : urlToPath.has(s) ? 'p:' + urlToPath.get(s) : s.length + ':' + s.slice(60, 120) + s.slice(-60);
+  const sig = c => JSON.stringify(Object.assign({}, c, { imgs: (Array.isArray(c.imgs) ? c.imgs : []).map(short), img: short(c.img), biz: short(c.biz) }));
+  const iso = v => { const d = v ? new Date(v) : null; return d && !isNaN(d) ? d.toISOString() : null; };
+
+  // ---------- small UI helpers (sync badge, login screen) ----------
+  function badge(text, bad){
+    let b = document.getElementById('syncBadge');
+    if (!b) { b = document.createElement('div'); b.id = 'syncBadge'; b.className = 'syncbadge'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+    b.textContent = text || ''; b.classList.toggle('bad', !!bad); b.hidden = !text;
+  }
+  function warn(err){
+    console.warn('Supabase save failed:', err);
+    badge(navigator.onLine === false ? T('Offline · changes not saved yet', 'غير متصل · لم تُحفظ التغييرات بعد', '离线 · 更改尚未保存') : T('Not saved yet · retrying…', 'لم يُحفظ بعد · جارٍ إعادة المحاولة…', '尚未保存 · 正在重试…'), true);
+    if (warned) return; warned = true;
+    if (typeof toast === 'function') toast(T("Couldn't save to the online database. The app will keep retrying — don't close it yet.", 'تعذّر الحفظ في قاعدة البيانات. سيعيد التطبيق المحاولة تلقائيًا — لا تغلقه الآن.', '无法保存到在线数据库。应用会自动重试，请暂时不要关闭。'));
+  }
+
+  function dataURLtoBlob(d){
+    const m = /^data:([^;,]+)(;base64)?,(.*)$/s.exec(d); if (!m) return null;
+    if (!m[2]) return new Blob([decodeURIComponent(m[3])], {type: m[1]});
+    const bin = atob(m[3]), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return new Blob([out], {type: m[1]});
+  }
+  async function nameFor(d){
+    try { const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(d)); return [...new Uint8Array(h)].slice(0, 16).map(x => x.toString(16).padStart(2, '0')).join(''); }
+    catch(e) { return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
+  }
+  const EXT = {'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','image/svg+xml':'svg'};
+
+  // photo value in the app (data URL or signed URL) -> value saved in the database ("sb:<path>")
+  async function toRef(s, id){
+    if (typeof s !== 'string' || !s) return s;
+    if (urlToPath.has(s)) return 'sb:' + urlToPath.get(s);
+    if (!s.startsWith('data:')) return s;
+    const key = id + '|' + s;
+    if (uploaded.has(key)) return 'sb:' + uploaded.get(key);
+    const blob = dataURLtoBlob(s); if (!blob) return '';
+    const path = `${id.replace(/[^\w-]/g, '_')}/${await nameFor(s)}.${EXT[blob.type] || 'jpg'}`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: blob.type, upsert: true });
+    if (error) throw error;
+    uploaded.set(key, path);
+    return 'sb:' + path;
+  }
+  async function toRow(c){
+    const data = Object.assign({}, c);
+    if (Array.isArray(c.imgs)) data.imgs = await Promise.all(c.imgs.map(s => toRef(s, c.id)));
+    for (const k of ['img', 'biz']) if (c[k]) data[k] = await toRef(c[k], c.id);
+    const paths = refsOf(data).filter(s => s.startsWith('sb:')).map(s => s.slice(3));
+    return { row: { id: c.id, name: c.name || '', supplier: c.supplier || '', category: c.category || '', data, added_at: iso(c.added), updated_at: iso(c.updated) || new Date().toISOString() }, paths };
+  }
+
+  // ---------- background save ----------
+  async function flushOnce(){
+    if (!sb || !dirty.size) return;
+    const keys = [...dirty]; dirty.clear();
+    try {
+      for (const k of keys) {
+        if (k !== CARDS) {
+          const { error } = await sb.from('app_settings').upsert({ key: k, value: cache[k] === undefined ? null : cache[k], updated_at: new Date().toISOString() });
+          if (error) throw error;
+          continue;
+        }
+        const list = (Array.isArray(cache[CARDS]) ? cache[CARDS] : []).filter(c => c && c.id && !c.sample);
+        const ids = new Set(list.map(c => c.id));
+        const changed = list.filter(c => savedSig.get(c.id) !== sig(c));
+        let photosLeft = changed.reduce((n, c) => n + refsOf(c).filter(s => s.startsWith('data:') && !uploaded.has(c.id + '|' + s)).length, 0);
+        for (let i = 0; i < changed.length; i += 20) {
+          const batch = changed.slice(i, i + 20), rows = [], meta = [];
+          for (const c of batch) {
+            if (photosLeft) badge(T(`Uploading photos… ${photosLeft} left`, `جارٍ رفع الصور… متبقٍ ${photosLeft}`, `正在上传照片… 剩余 ${photosLeft} 张`));
+            const s = sig(c), before = refsOf(c).filter(x => x.startsWith('data:')).length;
+            const { row, paths } = await toRow(c);
+            photosLeft = Math.max(0, photosLeft - before);
+            rows.push(row); meta.push([c.id, s, paths]);
+          }
+          const { error } = await sb.from('product_cards').upsert(rows);
+          if (error) throw error;
+          for (const [id, s, paths] of meta) { savedSig.set(id, s); savedPaths.set(id, paths); }
+        }
+        const gone = [...savedSig.keys()].filter(id => !ids.has(id));
+        for (let i = 0; i < gone.length; i += 100) {
+          const part = gone.slice(i, i + 100);
+          const { error } = await sb.from('product_cards').delete().in('id', part);
+          if (error) throw error;
+          part.forEach(id => { savedSig.delete(id); savedPaths.delete(id); });
+        }
+        const order = JSON.stringify(list.map(c => c.id));
+        if (order !== lastOrder) {
+          const { error } = await sb.from('app_settings').upsert({ key: ORDER_KEY, value: JSON.parse(order), updated_at: new Date().toISOString() });
+          if (error) throw error;
+          lastOrder = order;
+        }
+        // photos no saved product points to any more (removed from a card, or card deleted)
+        const used = new Set([...savedPaths.values()].flat());
+        const orphans = [...new Set([...uploaded.values(), ...urlToPath.values()])].filter(p => !used.has(p));
+        if (orphans.length) {
+          const { error } = await sb.storage.from(BUCKET).remove(orphans);
+          if (!error) {
+            const drop = new Set(orphans);
+            for (const [u, p] of urlToPath) if (drop.has(p)) urlToPath.delete(u);
+            for (const [d, p] of uploaded) if (drop.has(p)) uploaded.delete(d);
+          }
+        }
+      }
+      warned = false;
+      badge(dirty.size ? T('Saving…', 'جارٍ الحفظ…', '正在保存…') : '');
+    } catch(err) {
+      keys.forEach(k => dirty.add(k));
+      warn(err);
+      clearTimeout(timer); timer = setTimeout(flush, 8000);
+    }
+  }
+  function flush(){
+    timer = null;
+    if (running) return running.then(() => dirty.size ? flush() : undefined);
+    running = flushOnce().finally(() => { running = null; });
+    return running;
+  }
+  const schedule = () => { clearTimeout(timer); badge(T('Saving…', 'جارٍ الحفظ…', '正在保存…')); timer = setTimeout(flush, 400); };
+  window.addEventListener('online', () => { if (dirty.size) flush(); });
+  window.addEventListener('beforeunload', e => { if (dirty.size || running) { e.preventDefault(); e.returnValue = ''; } });
+
+  window.APP_STORE = {
+    get(k, d){ return Object.prototype.hasOwnProperty.call(cache, k) ? cache[k] : d; },
+    set(k, v){ cache[k] = v; dirty.add(k); schedule(); return true; }
+  };
+  window.APP_STORAGE_FLUSH = flush;
+  window.APP_SIGN_OUT = async () => {
+    try { await flush(); } catch(e) {}
+    if (dirty.size && !confirm(T('Some changes are not saved yet. Sign out anyway?', 'بعض التغييرات لم تُحفظ بعد. هل تريد تسجيل الخروج على أي حال؟', '部分更改尚未保存。仍要退出吗？'))) return;
+    try { await sb.auth.signOut(); } catch(e) {}
+    location.reload();
+  };
+
+  // ---------- load everything once signed in ----------
+  async function selectAll(table, cols){
+    const out = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await sb.from(table).select(cols).range(from, from + 999);
+      if (error) throw error;
+      out.push(...data); if (data.length < 1000) return out;
+    }
+  }
+  async function loadAll(){
+    const [cardRows, settingRows] = await Promise.all([selectAll('product_cards', 'id,data,added_at'), selectAll('app_settings', 'key,value')]);
+    let order = null;
+    for (const r of settingRows) { if (r.key === ORDER_KEY) order = r.value; else cache[r.key] = r.value; }
+    const byId = {};
+    for (const r of cardRows) byId[r.id] = Object.assign({}, r.data, { id: r.id });
+    // turn saved photo paths into viewable (signed) links
+    const paths = [...new Set(Object.values(byId).flatMap(c => refsOf(c)).filter(s => s.startsWith('sb:')).map(s => s.slice(3)))];
+    const signed = new Map();
+    for (let i = 0; i < paths.length; i += 300) {
+      const { data, error } = await sb.storage.from(BUCKET).createSignedUrls(paths.slice(i, i + 300), SIGN_SECONDS);
+      if (error) throw error;
+      for (const x of data || []) if (x && x.signedUrl && !x.error) signed.set(x.path, x.signedUrl);
+    }
+    const view = s => typeof s === 'string' && s.startsWith('sb:') ? (signed.get(s.slice(3)) || '') : s;
+    for (const c of Object.values(byId)) {
+      const before = refsOf(c).filter(s => s.startsWith('sb:')).map(s => s.slice(3));
+      if (Array.isArray(c.imgs)) c.imgs = c.imgs.map(view).filter(Boolean);
+      for (const k of ['img', 'biz']) if (c[k]) c[k] = view(c[k]);
+      for (const p of before) { const u = signed.get(p); if (u) urlToPath.set(u, p); }
+      savedPaths.set(c.id, before.filter(p => signed.has(p)));
+    }
+    if (cardRows.length || order) {
+      const known = new Set(), list = [];
+      for (const id of Array.isArray(order) ? order : []) if (byId[id] && !known.has(id)) { known.add(id); list.push(byId[id]); }
+      const extra = Object.values(byId).filter(c => !known.has(c.id)).sort((a, b) => String(b.added || '').localeCompare(String(a.added || '')));
+      cache[CARDS] = extra.concat(list);
+      lastOrder = JSON.stringify(Array.isArray(order) ? order : []);
+      for (const c of cache[CARDS]) savedSig.set(c.id, sig(c));
+    }
+  }
+
+  // ---------- sign-in screen ----------
+  function loginScreen(errText){
+    return new Promise(resolve => {
+      document.getElementById('boot').hidden = true;
+      let box = document.getElementById('loginPage');
+      if (!box) { box = document.createElement('section'); box.id = 'loginPage'; box.className = 'gate loginwrap'; document.body.insertBefore(box, document.body.firstChild); }
+      box.hidden = false;
+      const KEY = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+      box.innerHTML = `
+        <form class="gatecard loginform" novalidate>
+          <span class="gateicon">${KEY}</span>
+          <h1>${T('Sign in', 'تسجيل الدخول', '登录')}</h1>
+          <div class="field"><label for="lgUser">${T('User ID', 'اسم المستخدم', '用户名')}</label><input id="lgUser" autocomplete="username" autocapitalize="none" spellcheck="false" dir="ltr" required></div>
+          <div class="field"><label for="lgPass">${T('Password', 'كلمة المرور', '密码')}</label><input id="lgPass" type="password" autocomplete="current-password" dir="ltr" required></div>
+          <p class="gatemsg bad" id="lgMsg" role="alert" ${errText ? '' : 'hidden'}>${errText || ''}</p>
+          <button type="submit" class="gatebtn" id="lgBtn">${T('Sign in', 'تسجيل الدخول', '登录')}</button>
+        </form>`;
+      const f = box.querySelector('form'), msg = box.querySelector('#lgMsg'), btn = box.querySelector('#lgBtn');
+      box.querySelector('#lgUser').focus();
+      f.addEventListener('submit', async e => {
+        e.preventDefault();
+        const user = box.querySelector('#lgUser').value.trim(), pass = box.querySelector('#lgPass').value;
+        if (!user || !pass) { msg.textContent = T('Enter your user ID and password.', 'أدخل اسم المستخدم وكلمة المرور.', '请输入用户名和密码。'); msg.hidden = false; return; }
+        btn.disabled = true; msg.hidden = true;
+        const email = user.includes('@') ? user : user.toLowerCase() + '@' + LOGIN_DOMAIN;
+        try {
+          const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+          if (error) throw error;
+          box.hidden = true; resolve();
+        } catch(err) {
+          const net = !err || err.status === 0 || /fetch|network/i.test(err.message || '');
+          msg.textContent = net ? T("Couldn't reach the server. Check your internet connection and try again.", 'تعذّر الوصول إلى الخادم. تحقّق من اتصال الإنترنت وحاول مرة أخرى.', '无法连接服务器。请检查网络后重试。')
+                                : T('Wrong user ID or password.', 'اسم المستخدم أو كلمة المرور غير صحيحة.', '用户名或密码错误。');
+          msg.hidden = false; btn.disabled = false;
+        }
+      });
+    });
+  }
+  function fatal(text){
+    const b = document.getElementById('boot'); b.hidden = false;
+    b.innerHTML = `<div class="bootmsg"><p>${text}</p><button type="button" class="gatebtn" onclick="location.reload()">${T('Try again', 'حاول مرة أخرى', '重试')}</button></div>`;
+  }
+
+  window.APP_STORAGE_READY = (async () => {
+    if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r));
+    if (!window.supabase || !window.supabase.createClient) {
+      fatal(T("The app couldn't connect. Check your internet connection and reload.", 'تعذّر الاتصال. تحقّق من اتصال الإنترنت ثم أعد تحميل الصفحة.', '应用无法连接。请检查网络后重新加载。'));
+      return new Promise(() => {});
+    }
+    sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'pcm.auth' } });
+    let { data: { session } } = await sb.auth.getSession();
+    if (!session) await loginScreen();
+    for (;;) {
+      const b = document.getElementById('boot'); b.hidden = false;
+      try { await loadAll(); break; }
+      catch(err) {
+        console.warn('Load failed:', err);
+        const auth = err && (err.status === 401 || /jwt|token|auth/i.test(err.message || ''));
+        if (auth) { try { await sb.auth.signOut(); } catch(e) {} await loginScreen(T('Your session ended. Please sign in again.', 'انتهت الجلسة. سجّل الدخول مرة أخرى.', '会话已过期，请重新登录。')); continue; }
+        fatal(T("Couldn't load your data. Check your internet connection and try again.", 'تعذّر تحميل بياناتك. تحقّق من اتصال الإنترنت وحاول مرة أخرى.', '无法加载数据。请检查网络后重试。'));
+        return new Promise(() => {});
+      }
+    }
+  })();
+})();
+</script>
+<div class="boot" id="boot" role="status"><span></span></div>
+<script type="text/plain" id="app-main">
+// ---- Language: fixed page text is swapped from this English/Arabic list; generated text uses L(en, ar) ----
+const I18N = {"Add new product": "إضافة منتج جديد", "Enter details, photos and supplier card": "أدخل البيانات والصور وبطاقة المورّد", "Product Database": "قاعدة بيانات المنتجات", "Browse saved products": "تصفّح المنتجات المحفوظة", "Supplier Database": "قاعدة بيانات الموردين", "Products grouped by supplier": "المنتجات مجمّعة حسب المورّد", "Profit calculator": "حاسبة الأرباح", "Work out profit in SAR": "احسب الربح بالريال السعودي", "Home": "الرئيسية", "Profit calculator · SAR": "حاسبة الأرباح · ريال سعودي", "Product": "المنتج", "Enter cost manually": "إدخال التكلفة يدويًا", "Unit cost (SAR)": "تكلفة الوحدة (ريال)", "SR": "ر.س", "Quantity": "الكمية", "Overhead / shipping": "المصاريف / الشحن", "Selling price / unit (inc. 15% VAT)": "سعر بيع الوحدة (شامل ضريبة القيمة المضافة 15%)", "Enter the selling price including 15% VAT. VAT is removed before profit is worked out. Overhead is added as a percentage of the product cost.": "أدخل سعر البيع شاملًا ضريبة القيمة المضافة 15%. تُخصم الضريبة قبل حساب الربح، وتُضاف المصاريف كنسبة من تكلفة المنتج.", "Total profit": "إجمالي الربح", "Product cost": "تكلفة المنتج", "Total cost": "التكلفة الإجمالية", "Sales (inc. VAT)": "المبيعات (شامل الضريبة)", "VAT (15%)": "ضريبة القيمة المضافة (15%)", "Revenue (ex. VAT)": "الإيرادات (بدون الضريبة)", "Landed cost / unit": "التكلفة الفعلية للوحدة", "Profit / unit": "الربح للوحدة", "Break-even price / unit (inc. VAT)": "سعر التعادل للوحدة (شامل الضريبة)", "Date added:": "تاريخ الإضافة:", "Product name": "اسم المنتج", "Enter a product name.": "أدخل اسم المنتج.", "Category": "الفئة", "Supplier": "المورّد", "Factory location": "موقع المصنع", "Store ID": "رقم المتجر", "Kitchenware": "أدوات المطبخ", "Electronics": "إلكترونيات", "Apparel": "ملابس", "Home décor": "ديكور منزلي", "Packaging": "تغليف", "Tools & hardware": "عِدد وأدوات", "Beauty": "تجميل", "Toys": "ألعاب", "Product link": "رابط المنتج", "Scan QR": "مسح QR", "Specifications": "المواصفات", "Dimensions": "الأبعاد", "Weight": "الوزن", "Material": "المادة", "Cost & unit": "التكلفة والوحدة", "Unit cost": "تكلفة الوحدة", "MOQ": "الحد الأدنى للطلب", "Unit of measurement": "وحدة القياس", "pcs": "قطعة", "set": "طقم", "box": "علبة", "carton": "كرتون", "pair": "زوج", "dozen": "دزينة", "kg": "كجم", "g": "جم", "m": "م", "roll": "لفة", "L": "لتر", "Rates": "أسعار الصرف", "Remarks": "ملاحظات", "Generate card": "إنشاء البطاقة", "Clear": "مسح", "Search supplier, product or factory": "ابحث عن مورّد أو منتج أو مصنع", "+ Add": "+ إضافة", "Back": "السابق", "Share": "مشاركة", "Next": "التالي", "Close": "إغلاق", "A man cutting grass with an electric lawn mower": "رجل يقصّ العشب بجزازة عشب كهربائية", "Add product photo": "إضافة صورة المنتج", "Product photo": "صورة المنتج", "Add supplier business card": "إضافة بطاقة عمل المورّد", "Supplier business card": "بطاقة عمل المورّد", "Scan QR with camera": "مسح رمز QR بالكاميرا", "Read QR from a saved image or screenshot": "قراءة رمز QR من صورة محفوظة أو لقطة شاشة", "Read QR from a saved image": "قراءة رمز QR من صورة محفوظة", "Currency": "العملة", "Product database": "قاعدة بيانات المنتجات", "Previous card": "البطاقة السابقة", "Share this product as an image": "مشاركة هذا المنتج كصورة", "Next card": "البطاقة التالية", "Backup & transfer": "النسخ الاحتياطي والنقل", "Export backup": "تصدير نسخة احتياطية", "Import backup": "استيراد نسخة احتياطية", "One ZIP file with the product data (CSV) and all images.": "ملف ZIP واحد يحتوي على بيانات المنتجات (CSV) وجميع الصور.", "Variant": "الخيار", "Sign out": "تسجيل الخروج"};
+const TEXT_KEY = {};   // English, Arabic or Chinese text -> English key
+for (const [en, ar] of Object.entries(I18N)) { TEXT_KEY[en] = en; if (!(ar in TEXT_KEY)) TEXT_KEY[ar] = en; const z = zh(en); if (!(z in TEXT_KEY)) TEXT_KEY[z] = en; }
+const inLang = en => LANG === 'ar' ? I18N[en] : LANG === 'zh' ? zh(en) : en;
+function applyStatic(){
+  const map = new Proxy({}, {has: (_, t) => t in TEXT_KEY, get: (_, t) => inLang(TEXT_KEY[t])});
+  const skip = el => el.closest && el.closest('#gallery, #supList, .langswitch, .langpick, #toast, #cResult .chip, #gatePage');
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const t = n.nodeValue.trim(); if (!t || !(t in map) || skip(n.parentElement)) continue;
+    n.nodeValue = n.nodeValue.replace(t, map[t]);
+  }
+  document.querySelectorAll('[aria-label],[title],[alt]').forEach(el => {
+    if (skip(el)) return;
+    for (const a of ['aria-label','title','alt']) { const v = el.getAttribute(a); if (v && v in map) el.setAttribute(a, map[v]); }
+  });
+}
+function setLang(l, rerender){
+  LANG = l === 'ar' ? 'ar' : l === 'zh' ? 'zh' : 'en';
+  try { localStorage.setItem('pcm.lang', JSON.stringify(LANG)); } catch(e) {}
+  document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('.langswitch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === LANG)));
+  document.querySelectorAll('[data-langpick]').forEach(sel => { sel.value = LANG; });
+  document.querySelectorAll('.langpick .lpcode').forEach(x => { x.textContent = {en: 'EN', ar: 'ع', zh: '中'}[LANG]; });
+  applyStatic();
+  if (rerender) {
+    renderGallery(); updateNav(); renderSuppliers(); fillCalcProducts($('cProduct').value);
+    fillCalcVariants(cards.find(x => x.id === $('cProduct').value), $('cVariant').value); calc();
+    renderVariantsUI();
+    $('saveBtn').textContent = editingId ? L('Update card','تحديث البطاقة') : L('Generate card','إنشاء البطاقة');
+    const ed = editingId && cards.find(c => c.id === editingId);
+    $('dateAdded').textContent = ed ? (addedOf(ed) ? fmtDate(addedOf(ed)) : '—') : fmtDate(new Date().toISOString());
+    if (!$('supNote').hidden) applySupplier();
+    $('qrMsg').hidden = true; $('err').hidden = true; $('dtMsg').hidden = true;
+  }
+}
+document.addEventListener('change', e => { const sel = e.target.closest('[data-langpick]'); if (sel && sel.value !== LANG) setLang(sel.value, true); });
+document.querySelector('.langswitch').addEventListener('click', e => { const b = e.target.closest('[data-lang]'); if (b && b.dataset.lang !== LANG) setLang(b.dataset.lang, true); });
+
+const $ = id => document.getElementById(id);
+const KEY = 'pcm.cards.v1', RKEY = 'pcm.rates.v1';
+const store = window.APP_STORE;
+
+const SAMPLE_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#e3eefa"/><rect x="170" y="40" width="60" height="26" rx="6" fill="#7d8f8a"/><rect x="150" y="62" width="100" height="200" rx="34" fill="#a9bab5"/><rect x="150" y="120" width="100" height="70" fill="#1f63b8"/><rect x="168" y="80" width="10" height="160" rx="5" fill="#ffffff" opacity=".35"/></svg>`);
+
+let cards = store.get(KEY, null);
+const firstRun = cards === null;
+if (firstRun) cards = [{
+  id:'sample', sample:true, name:'Insulated steel water bottle 750 ml', category:'Kitchenware',
+  supplier:'Yiwu Hengda Trading Co.', cost:'18.50', uom:'pcs', usd:'2.61', sar:'9.77', img:SAMPLE_IMG
+}];
+let rates = store.get(RKEY, {usd:'7.10', sar:'3.75'});
+// Supplier details (factory location, store ID) are kept once per supplier and reused for every product
+const SKEY = 'pcm.suppliers.v1';
+const supKey = n => (n || '').trim().toLowerCase();
+let suppliers = store.get(SKEY, null);
+if (!suppliers) {
+  suppliers = {};
+  [...cards].reverse().forEach(c => {
+    const k = supKey(c.supplier); if (!k) return;
+    const p = suppliers[k] || (suppliers[k] = {name: c.supplier.trim(), factory: '', storeId: ''});
+    if (c.factory) p.factory = c.factory; if (c.storeId) p.storeId = c.storeId;
+  });
+  store.set(SKEY, suppliers);
+}
+let editingId = null, imgsData = [], bizData = '';
+const BIZ_PH = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f3f5f4'/%3E%3Crect x='10' y='18' width='44' height='28' rx='3' fill='none' stroke='%237d8f8a' stroke-width='2'/%3E%3Ccircle cx='22' cy='30' r='4' fill='%237d8f8a'/%3E%3Cpath d='M32 28h14M32 34h10M16 40h30' stroke='%237d8f8a' stroke-width='2'/%3E%3C/svg%3E";
+
+$('rUSD').value = rates.usd; $('rSAR').value = rates.sar;
+
+const num = v => { const n = parseFloat(String(v).replace(/,/g,'')); return isFinite(n) ? n : null; };
+const fmt = v => { const n = num(v); return n === null ? '—' : n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function convertAll(cost, cur){
+  const v = num(cost), ru = num($('rUSD').value), rs = num($('rSAR').value);
+  if (v === null || !ru || !rs) return {rmb:'', usd:'', sar:''};
+  const usd = cur === 'USD' ? v : v / ru;
+  return {rmb:(cur === 'USD' ? v * ru : v).toFixed(2), usd:usd.toFixed(2), sar:(usd * rs).toFixed(2)};
+}
+function pricesOf(c){
+  if (c.rmb !== undefined) return {rmb:c.rmb, usd:c.usd, sar:c.sar, cur:c.cur || 'RMB'};
+  return {rmb:c.cost, usd:c.usd ?? toUSD(c.cost), sar:c.sar ?? toSAR(c.cost), cur:'RMB'};
+}
+function toUSD(rmb){ const r = num(rmb), ru = num($('rUSD').value); return r === null || !ru ? '' : (r/ru).toFixed(2); }
+function toSAR(rmb){ const u = num(toUSD(rmb)), rs = num($('rSAR').value); return u === null || !rs ? '' : (u*rs).toFixed(2); }
+
+// ---- Price variants: a product can have up to 10 prices, e.g. for sizes or colours ----
+const MAX_VARIANTS = 10;
+let variantsData = [];   // form state: [{name, cost}]
+function variantsOf(c){ return c && Array.isArray(c.variants) ? c.variants.filter(v => v && num(v.cost) !== null) : []; }
+function variantName(v, i){ return (v && v.name || '').trim() || L(`Variant ${i + 1}`, `الخيار ${i + 1}`); }
+function variantsText(c){ return variantsOf(c).map(v => `${(v.name || '').replace(/\|/g, '/').trim()}: ${v.cost}`).join(' | '); }
+function parseVariants(text, cur){
+  return String(text || '').split('|').map(x => x.trim()).filter(Boolean).slice(0, MAX_VARIANTS).map(x => {
+    const i = x.lastIndexOf(':'), name = i < 0 ? '' : x.slice(0, i).trim(), cost = (i < 0 ? x : x.slice(i + 1)).trim();
+    return {name, cost, ...convertAll(cost, cur)};
+  }).filter(v => num(v.cost) !== null);
+}
+function rowPrice(c){
+  const vs = variantsOf(c), sym = c.cur === 'USD' ? '$' : '¥', key = c.cur === 'USD' ? 'usd' : 'rmb';
+  if (!vs.length) { const pr = pricesOf(c); return sym + fmt(pr[key]); }
+  const low = vs.reduce((a, v) => num(v[key]) < num(a[key]) ? v : a, vs[0]);
+  return L('from ', 'من ') + sym + fmt(low[key]);
+}
+function renderVariantsUI(){
+  const box = $('variantsBox'), on = variantsData.length > 0, sym = $('cur').value === 'USD' ? '$' : '¥';
+  $('costMoney').hidden = on;
+  $('costLabel').textContent = on ? L('Currency (for all variants)', 'العملة (لجميع الخيارات)') : L('Unit cost', 'تكلفة الوحدة');
+  if (!on) {
+    box.innerHTML = `<button type="button" class="addvar" id="addVarBtn">+ ${L('Add price variants (sizes, colours…)', 'إضافة خيارات للسعر (مقاسات، ألوان…)')}</button>`;
+    return;
+  }
+  box.innerHTML = `<p class="eyebrow">${L('Price variants', 'خيارات السعر')}</p>
+    <div class="varhead"><span>${L('Variant (size, colour…)', 'الخيار (المقاس، اللون…)')}</span><span>${L('Unit cost', 'تكلفة الوحدة')}</span><span></span></div>
+    ${variantsData.map((v, i) => `<div class="varrow" data-i="${i}">
+      <input class="vname" id="vname${i}" autocomplete="off" aria-label="${L(`Variant ${i + 1} name`, `اسم الخيار ${i + 1}`)}" value="${esc(v.name)}">
+      <div class="money"><span class="vsym">${sym}</span><input class="vcost num" id="vcost${i}" inputmode="decimal" aria-label="${L(`Variant ${i + 1} unit cost`, `تكلفة الخيار ${i + 1}`)}" value="${esc(v.cost)}"></div>
+      <button type="button" class="vdel" data-vdel="${i}" aria-label="${L(`Remove variant ${i + 1}`, `حذف الخيار ${i + 1}`)}">×</button>
+    </div>`).join('')}
+    <div class="varfoot">
+      <button type="button" class="addvar" id="addVarBtn"${variantsData.length >= MAX_VARIANTS ? ' disabled' : ''}>+ ${L('Add variant', 'إضافة خيار')}</button>
+      <span class="varcount">${L(`${variantsData.length} of ${MAX_VARIANTS}`, `${variantsData.length} من ${MAX_VARIANTS}`)}</span>
+    </div>`;
+}
+$('variantsBox').addEventListener('click', e => {
+  const add = e.target.closest('#addVarBtn'), del = e.target.closest('[data-vdel]');
+  if (add) {
+    if (!variantsData.length) variantsData = [{name: '', cost: $('cost').value.trim()}, {name: '', cost: ''}];
+    else if (variantsData.length < MAX_VARIANTS) variantsData.push({name: '', cost: ''});
+    renderVariantsUI();
+    const i = variantsData.findIndex(v => !v.name); const el = $('vname' + (i < 0 ? variantsData.length - 1 : i)); if (el) el.focus();
+  } else if (del) {
+    variantsData.splice(+del.dataset.vdel, 1);
+    if (variantsData.length < 2) { $('cost').value = variantsData[0] ? variantsData[0].cost : $('cost').value; variantsData = []; }
+    renderVariantsUI();
+  }
+});
+$('variantsBox').addEventListener('input', e => {
+  const row = e.target.closest('.varrow'); if (!row) return;
+  const v = variantsData[+row.dataset.i]; if (!v) return;
+  if (e.target.classList.contains('vname')) v.name = e.target.value; else if (e.target.classList.contains('vcost')) v.cost = e.target.value;
+});
+function formVariants(){
+  return variantsData.map(v => ({name: v.name.trim().replace(/\|/g, '/'), cost: v.cost.trim()})).filter(v => v.name || v.cost);
+}
+
+function readForm(){
+  return { name:$('name').value.trim(), category:$('category').value.trim(), supplier:$('supplier').value.trim(),
+    uom:$('uom').value.trim(), url:$('url').value.trim(),
+    factory:$('factory').value.trim(), moq:$('moq').value.trim(), storeId:$('storeId').value.trim(), remarks:$('remarks').value.trim(),
+    dims:$('dims').value.trim(), weight:$('weight').value.trim(), material:$('material').value.trim(),
+    ...(() => {
+      const cur = $('cur').value, vs = formVariants(), base = vs.length ? vs[0].cost : $('cost').value.trim();
+      return {cost: base, cur, ...convertAll(base, cur), variants: vs.map(v => ({...v, ...convertAll(v.cost, cur)}))};
+    })(), imgs:[...imgsData], biz:bizData };
+}
+
+function safeURL(u){ try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x : null; } catch(e){ return null; } }
+function linkHTML(u){
+  if (!u) return '';
+  const x = safeURL(u);
+  if (!x) return `<p class="meta" style="margin:0;overflow-wrap:anywhere">${esc(u)}</p>`;
+  return `<a class="plink" href="${esc(x.href)}" target="_blank" rel="noopener">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+    ${esc(x.hostname.replace(/^www\./,''))}</a>`;
+}
+// Date added: set automatically when a product is first saved; older products use the time encoded in their id
+function addedOf(c){
+  if (!c || c.sample) return '';
+  if (c.added) return c.added;
+  const t = parseInt(c.id, 36);
+  return t > 1.6e12 && t < 4e12 ? new Date(t).toISOString() : '';
+}
+function fmtDate(iso){ try { return (LANG === 'ar' ? new Date(iso).toLocaleDateString('ar-u-ca-gregory-nu-latn', {day:'numeric', month:'long', year:'numeric'}) : LANG === 'zh' ? new Date(iso).toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric'}) : new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})); } catch(e){ return ''; } }
+function fact(label, val){ return `<div><dt>${label}</dt><dd dir="auto">${esc(val) || '—'}</dd></div>`; }
+function cardHTML(c, actions){
+  const pr = pricesOf(c), im = imgsOf(c), vs = variantsOf(c);
+  const uom = c.uom ? ' / ' + esc(c.uom) : '';
+  const imgBlock = im.length
+    ? `<button type="button" class="zoom" data-zoom="${c.id}" aria-label="${L('Enlarge photo','تكبير الصورة')}"><img src="${im[0]}" alt="${esc(c.name)}"></button>` + (im.length > 1 ? `<span class="pcount">1/${im.length}</span><button type="button" class="imgnext" data-next="${c.id}" aria-label="${L('Next photo','الصورة التالية')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>` : '')
+    : `<span class="nophoto">${L('No product photo','لا توجد صورة للمنتج')}</span>`;
+  const link = c.url ? linkHTML(c.url) : `<p class="muted-row">${L('Product link','رابط المنتج')}: —</p>`;
+  const biz = c.biz ? `<button type="button" class="bizbtn" data-view="${c.id}"><img src="${c.biz}" alt="">${L('Supplier business card','بطاقة عمل المورّد')}</button>` : `<p class="muted-row">${L('Supplier business card','بطاقة عمل المورّد')}: —</p>`;
+  return `<article class="pcard">
+    <div class="img" data-card="${c.id || ''}" data-i="0">${imgBlock}</div>
+    <div class="body">
+      <div><h3>${esc(c.name) || L('Product name','اسم المنتج')}</h3>${c.sample ? `<p class="sup">${L('Example','مثال')}</p>` : ''}</div>
+      <div>
+        <p class="costcap">${L('Unit cost','تكلفة الوحدة')}${vs.length ? uom : ''} <span>(${L('entered in','أُدخلت بـ')} ${pr.cur})</span></p>
+        ${vs.length ? `<div class="vtable">
+          <div class="vhead"><span>${L('Variant','الخيار')}</span><span>RMB</span><span>USD</span><span class="main">SAR</span></div>
+          ${vs.map((v, i) => `<div class="vrow"><span class="vn" dir="auto">${esc(variantName(v, i))}</span><b>${fmt(v.rmb)}</b><b>${fmt(v.usd)}</b><b class="main">${fmt(v.sar)}</b></div>`).join('')}
+        </div>` : `<div class="prices">
+          <div><small>RMB${uom}</small><b>¥${fmt(pr.rmb)}</b></div>
+          <div><small>USD${uom}</small><b>$${fmt(pr.usd)}</b></div>
+          <div class="main"><small>SAR${uom}</small><b>${fmt(pr.sar)}</b></div>
+        </div>`}
+      </div>
+      <dl class="facts">
+        ${fact(L('Category','الفئة'), c.category)}${fact(L('Supplier','المورّد'), c.supplier)}
+        ${fact(L('Unit','الوحدة'), c.uom)}${fact(L('MOQ','الحد الأدنى للطلب'), c.moq ? c.moq + (c.uom && /^[\d.,\s]+$/.test(c.moq) ? ' ' + c.uom : '') : '')}
+        ${fact(L('Factory location','موقع المصنع'), c.factory)}${fact(L('Store ID','رقم المتجر'), c.storeId)}
+        ${fact(L('Dimensions','الأبعاد'), c.dims)}${fact(L('Weight','الوزن'), c.weight)}
+        ${fact(L('Material','المادة'), c.material)}${fact(L('Date added','تاريخ الإضافة'), addedOf(c) ? fmtDate(addedOf(c)) : '')}
+      </dl>
+      <div class="remarks"><dt>${L('Remarks','ملاحظات')}</dt><p>${esc(c.remarks) || '—'}</p></div>
+      ${link}
+      ${biz}
+    </div>
+    ${actions ? `<div class="cardactions"><button type="button" data-edit="${c.id}">${L('Edit','تعديل')}</button><button type="button" data-calc="${c.id}">${L('Profit','الربح')}</button><button type="button" data-copy="${c.id}">${L('Copy','نسخ')}</button><button type="button" data-del="${c.id}">${L('Delete','حذف')}</button></div>` : ''}
+  </article>`;
+}
+
+function renderPreview(){}
+const CKEY = 'pcm.cur.v1';
+function setCur(v){ $('cur').value = v === 'USD' ? 'USD' : 'RMB'; const sym = $('cur').value === 'USD' ? '$' : '¥'; $('curSym').textContent = sym; document.querySelectorAll('#variantsBox .vsym').forEach(x => x.textContent = sym); }
+$('cur').addEventListener('change', () => { setCur($('cur').value); store.set(CKEY, $('cur').value); });
+let idx = 0;
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function showPage(page){
+  $('gatePage').hidden = page !== 'gate'; $('homePage').hidden = page !== 'home'; $('formPage').hidden = page !== 'form'; $('savedList').hidden = page !== 'cards'; $('calcPage').hidden = page !== 'calc'; $('supPage').hidden = page !== 'sup';
+  window.scrollTo(0, 0);
+}
+function updateNav(){
+  const n = cards.length;
+  $('count').textContent = n ? `${idx + 1} ${L('of','من')} ${n}` : '';
+  $('prevBtn').disabled = idx <= 0; $('nextBtn').disabled = idx >= n - 1;
+  $('dbCount').textContent = n ? L(`${n} saved ${n === 1 ? 'product' : 'products'}`, `عدد المنتجات المحفوظة: ${n}`) : L('No products saved yet','لا توجد منتجات محفوظة بعد');
+  const ns = new Set(cards.map(c => (c.supplier||'').trim().toLowerCase()).filter(Boolean)).size;
+  $('supCount').textContent = ns ? L(ns === 1 ? `${ns} supplier` : `${ns} suppliers`, `عدد الموردين: ${ns}`) : L('Products grouped by supplier','المنتجات مجمّعة حسب المورّد');
+}
+function goTo(i, smooth){
+  idx = Math.max(0, Math.min(i, cards.length - 1));
+  const g = $('gallery');
+  g.scrollTo({left: idx * g.clientWidth, behavior: smooth && !reduced() ? 'smooth' : 'auto'});
+  updateNav();
+}
+function setList(open){ showPage(open ? 'cards' : 'form'); if (open) requestAnimationFrame(() => goTo(idx)); }
+$('goAdd').addEventListener('click', () => { clearForm(); showPage('form'); });
+$('goDb').addEventListener('click', () => setList(true));
+$('goSup').addEventListener('click', () => { renderSuppliers(); showPage('sup'); });
+$('supHome').addEventListener('click', () => showPage('home'));
+$('supSearch').addEventListener('input', renderSuppliers);
+$('formHome').addEventListener('click', () => showPage('home'));
+$('cardsHome').addEventListener('click', () => showPage('home'));
+$('toForm').addEventListener('click', () => { clearForm(); setList(false); });
+$('prevBtn').addEventListener('click', () => goTo(idx - 1, true));
+$('nextBtn').addEventListener('click', () => goTo(idx + 1, true));
+let scrollT;
+$('gallery').addEventListener('scroll', () => {
+  clearTimeout(scrollT);
+  scrollT = setTimeout(() => { const g = $('gallery'); if (g.clientWidth) { idx = Math.round(g.scrollLeft / g.clientWidth); updateNav(); } }, 80);
+});
+document.addEventListener('keydown', e => {
+  if ($('savedList').hidden || !$('viewer').hidden) return;
+  if (e.key === 'ArrowLeft') goTo(idx - 1, true);
+  if (e.key === 'ArrowRight') goTo(idx + 1, true);
+});
+window.addEventListener('resize', () => { if (!$('savedList').hidden) goTo(idx); });
+
+function renderGallery(){
+  $('gallery').innerHTML = cards.length ? cards.map(c => `<div class="slide">${cardHTML(c, true)}</div>`).join('') :
+    `<p class="empty" style="flex:1">${L('No cards yet. Tap + Add to create your first card.','لا توجد بطاقات بعد. اضغط «+ إضافة» لإنشاء أول بطاقة.')}</p>`;
+  idx = Math.max(0, Math.min(idx, cards.length - 1));
+  updateNav();
+}
+
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2200); }
+
+function setBiz(src){ bizData = src || ''; const t = $('bizThumb'); if (bizData) t.src = bizData; else t.removeAttribute('src'); t.hidden = !bizData; t.parentElement.classList.toggle('has', !!bizData); }
+function imgsOf(c){ return Array.isArray(c.imgs) ? c.imgs : (c.img ? [c.img] : []); }
+function setImgs(arr){
+  imgsData = arr ? [...arr] : [];
+  const t = $('thumb'), n = imgsData.length;
+  if (n) t.src = imgsData[0]; else t.removeAttribute('src');
+  t.hidden = !n; t.parentElement.classList.toggle('has', !!n);
+  $('photoCount').textContent = n > 1 ? n : ''; $('photoCount').hidden = n < 2;
+  $('photoStrip').innerHTML = imgsData.map((src, i) => `<div class="ph"><img src="${src}" alt=""><button type="button" data-rm="${i}" aria-label="Remove photo ${i+1}">×</button></div>`).join('');
+  $('photoStrip').hidden = !n;
+}
+function setImg(src){ setImgs(src ? [src] : []); }
+
+function fillForm(c){
+  ['name','category','supplier','cost','uom','url','factory','moq','storeId','remarks','dims','weight','material'].forEach(k => $(k).value = c[k] || '');
+  setCur(c.cur || 'RMB');
+  variantsData = variantsOf(c).map(v => ({name: v.name || '', cost: String(v.cost ?? '')})); renderVariantsUI();
+  setImgs(imgsOf(c)); setBiz(c.biz);
+  $('dateAdded').textContent = addedOf(c) ? fmtDate(addedOf(c)) : '—';
+}
+
+function clearForm(){
+  $('form').reset(); $('rUSD').value = rates.usd; $('rSAR').value = rates.sar;
+  setImg(''); setBiz(''); setCur(store.get(CKEY, 'RMB')); editingId = null; $('qrMsg').hidden = true; $('supNote').hidden = true; $('name').removeAttribute('aria-invalid'); $('nameErr').hidden = true; supFilled = false;
+  $('saveBtn').textContent = L('Generate card','إنشاء البطاقة'); $('err').hidden = true; renderPreview();
+  $('dateAdded').textContent = fmtDate(new Date().toISOString());
+  variantsData = []; renderVariantsUI();
+}
+
+// Image: downscale so saved cards stay small
+$('bizFile').addEventListener('change', e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, 1200 / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas'); cv.width = Math.round(img.width*s); cv.height = Math.round(img.height*s);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      setBiz(cv.toDataURL('image/jpeg', .82));
+    };
+    img.onerror = () => { $('err').textContent = L("That file couldn't be read as an image. Try a JPG or PNG.",'تعذّرت قراءة الملف كصورة. جرّب صورة بصيغة JPG أو PNG.'); $('err').hidden = false; };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+const closeViewer = () => { $('viewer').hidden = true; $('viewerImg').removeAttribute('src'); $('viewerNote').hidden = true; };
+$('viewer').addEventListener('click', e => { if (e.target.id !== 'viewerImg' && e.target.id !== 'viewerNote') closeViewer(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeViewer(); });
+function shrink(file, max, q){
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, max / Math.max(img.width, img.height));
+        const cv = document.createElement('canvas'); cv.width = Math.round(img.width*s); cv.height = Math.round(img.height*s);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        res(cv.toDataURL('image/jpeg', q));
+      };
+      img.onerror = rej; img.src = reader.result;
+    };
+    reader.onerror = rej; reader.readAsDataURL(file);
+  });
+}
+$('image').addEventListener('change', async e => {
+  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+  for (const f of files) {
+    try { imgsData.push(await shrink(f, 760, .8)); }
+    catch(_) { $('err').textContent = L("One file couldn't be read as an image. Try a JPG or PNG.",'تعذّرت قراءة أحد الملفات كصورة. جرّب صورة بصيغة JPG أو PNG.'); $('err').hidden = false; }
+  }
+  setImgs(imgsData);
+});
+$('photoStrip').addEventListener('click', e => {
+  const b = e.target.closest('[data-rm]'); if (!b) return;
+  imgsData.splice(+b.dataset.rm, 1); setImgs(imgsData);
+});
+
+function renderSupList(){
+  $('sups').innerHTML = Object.values(suppliers).sort((a, b) => a.name.localeCompare(b.name)).map(p => `<option value="${esc(p.name)}">`).join('');
+}
+let supFilled = false;
+function applySupplier(){
+  const p = suppliers[supKey($('supplier').value)], note = $('supNote');
+  if (!p && supFilled) { $('factory').value = ''; $('storeId').value = ''; supFilled = false; }
+  if (p) {
+    supFilled = true;
+    $('factory').value = p.factory || ''; $('storeId').value = p.storeId || '';
+    note.textContent = L('Factory location and Store ID filled from this supplier. Any change you make updates all of their products.','تمت تعبئة موقع المصنع ورقم المتجر من بيانات هذا المورّد. أي تعديل تُجريه يُطبَّق على جميع منتجاته.');
+    note.hidden = false;
+  } else {
+    note.textContent = $('supplier').value.trim() ? L('New supplier. Factory location and Store ID will be remembered for next time.','مورّد جديد. سيتم حفظ موقع المصنع ورقم المتجر للمرات القادمة.') : '';
+    note.hidden = !$('supplier').value.trim();
+  }
+}
+$('supplier').addEventListener('input', applySupplier);
+$('name').addEventListener('input', () => { if ($('name').value.trim()) { $('name').removeAttribute('aria-invalid'); $('nameErr').hidden = true; } });
+$('supplier').addEventListener('change', applySupplier);
+$('form').addEventListener('input', e => {
+  const id = e.target.id;
+  if (id === 'rUSD' || id === 'rSAR') { rates = {usd:$('rUSD').value, sar:$('rSAR').value}; store.set(RKEY, rates); }
+  renderPreview();
+});
+
+$('clearBtn').addEventListener('click', clearForm);
+
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = readForm(), err = $('err');
+  if (!f.name) { $('name').value = ''; $('name').setAttribute('aria-invalid', 'true'); $('nameErr').hidden = false; $('name').focus(); $('name').scrollIntoView({block:'center'}); return; }
+  const badV = f.variants.findIndex(v => num(v.cost) === null);
+  if (badV > -1) { err.textContent = L('Each variant needs a unit cost, for example 12.50.', 'يحتاج كل خيار إلى تكلفة وحدة، مثل 12.50.'); err.hidden = false; const r = variantsData.findIndex(v => (v.name || '').trim() === f.variants[badV].name && (v.cost || '').trim() === f.variants[badV].cost); const el = $('vcost' + (r < 0 ? badV : r)); if (el) el.focus(); return; }
+  for (const k of ['cost']) if (!f.variants.length && f[k] && num(f[k]) === null) {
+    err.textContent = L('Unit cost must be a number, for example 12.50.','يجب أن تكون تكلفة الوحدة رقمًا، مثل 12.50.'); err.hidden = false; $(k).focus(); return;
+  }
+  err.hidden = true;
+  if (editingId) { const i = cards.findIndex(c => c.id === editingId); if (i > -1) cards[i] = {...f, id:editingId, added: addedOf(cards[i]) || new Date().toISOString(), updated: new Date().toISOString()}; }
+  else { cards = cards.filter(c => !c.sample); cards.unshift({...f, id:Date.now().toString(36), added: new Date().toISOString(), updated: new Date().toISOString()}); }
+  const sk = supKey(f.supplier);
+  if (sk) {
+    suppliers[sk] = {name: f.supplier, factory: f.factory, storeId: f.storeId};
+    cards.forEach(c => { if (supKey(c.supplier) === sk && (c.factory !== f.factory || c.storeId !== f.storeId)) { c.factory = f.factory; c.storeId = f.storeId; c.updated = new Date().toISOString(); } });
+    store.set(SKEY, suppliers); renderSupList();
+  }
+  const ok = store.set(KEY, cards);
+  const wasEdit = !!editingId;
+  idx = wasEdit ? Math.max(0, cards.findIndex(c => c.id === editingId)) : 0;
+  renderGallery(); clearForm(); setList(true);
+  toast(ok ? (wasEdit ? L('Card updated','تم تحديث البطاقة') : L('Card created','تم إنشاء البطاقة')) : L('Card created, but this browser could not save it','تم إنشاء البطاقة، لكن تعذّر حفظها في هذا المتصفح'));
+});
+
+async function onCardClick(e){
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.next) {
+    const c = cards.find(x => x.id === b.dataset.next), box = b.closest('.img'); if (!c || !box) return;
+    const im = imgsOf(c), i = (+box.dataset.i + 1) % im.length;
+    box.dataset.i = i; box.querySelector('img').src = im[i]; box.querySelector('.pcount').textContent = `${i+1}/${im.length}`;
+    return;
+  }
+  if (b.dataset.zoom) {
+    const c = cards.find(x => x.id === b.dataset.zoom), box = b.closest('.img'); if (!c) return;
+    const im = imgsOf(c), i = box ? +box.dataset.i || 0 : 0;
+    $('viewerImg').src = im[i] || im[0]; $('viewerImg').alt = c.name || L('Product photo','صورة المنتج');
+    $('viewer').hidden = false; $('viewerClose').focus(); return;
+  }
+  if (b.dataset.calc) { openCalc(b.dataset.calc); return; }
+  if (b.dataset.view) { const c = cards.find(x => x.id === b.dataset.view); if (c && c.biz) { $('viewerImg').src = c.biz; $('viewer').hidden = false; $('viewerClose').focus(); } return; }
+  const id = b.dataset.edit || b.dataset.copy || b.dataset.del;
+  const c = cards.find(x => x.id === id); if (!c) return;
+  if (b.dataset.edit) {
+    fillForm(c); editingId = c.sample ? null : id;
+    $('saveBtn').textContent = c.sample ? L('Generate card','إنشاء البطاقة') : L('Update card','تحديث البطاقة'); renderPreview();
+    setList(false);
+  } else if (b.dataset.copy) {
+    const u = c.uom ? ' / ' + c.uom : '';
+    const F = (en, ar, v) => v ? L(en, ar) + ': ' + v : '';
+    const txt = [c.name, F('Category','الفئة',c.category), F('Supplier','المورّد',c.supplier), F('Factory location','موقع المصنع',c.factory), F('Store ID','رقم المتجر',c.storeId),
+      F('Dimensions','الأبعاد',c.dims), F('Weight','الوزن',c.weight), F('Material','المادة',c.material), F('MOQ','الحد الأدنى للطلب', c.moq ? c.moq + (c.uom ? ' '+c.uom : '') : ''),
+      ...(variantsOf(c).length
+        ? [L('Unit cost','تكلفة الوحدة') + u + ':', ...variantsOf(c).map((v, i) => `• ${variantName(v, i)}: ¥${fmt(v.rmb)} | $${fmt(v.usd)} | ` + L(`SAR ${fmt(v.sar)}`, `${fmt(v.sar)} ر.س`))]
+        : [(p => L('Unit cost','تكلفة الوحدة') + `: ¥${fmt(p.rmb)} | $${fmt(p.usd)} | ` + L(`SAR ${fmt(p.sar)}`, `${fmt(p.sar)} ر.س`) + u)(pricesOf(c))]),
+      F('Remarks','ملاحظات',c.remarks), F('Link','الرابط',c.url), F('Date added','تاريخ الإضافة', addedOf(c) ? fmtDate(addedOf(c)) : '')].filter(Boolean).join('\n');
+    try { await navigator.clipboard.writeText(txt); toast(L('Details copied','تم نسخ البيانات')); }
+    catch(_) { toast(L("Couldn't copy here. Open Edit to select the text.",'تعذّر النسخ هنا. افتح «تعديل» لتحديد النص.')); }
+  } else if (b.dataset.del) {
+    if (b.dataset.confirm) { cards = cards.filter(x => x.id !== id); store.set(KEY, cards); renderGallery(); requestAnimationFrame(() => goTo(idx)); if (!$('supPage').hidden) renderSuppliers(); toast(L('Card deleted','تم حذف البطاقة')); }
+    else { b.dataset.confirm = '1'; b.textContent = L('Tap to confirm','اضغط للتأكيد'); b.style.color = 'var(--danger)'; setTimeout(() => { if (b.isConnected) { delete b.dataset.confirm; b.textContent = L('Delete','حذف'); b.style.color = ''; } }, 3000); }
+  }
+}
+$('gallery').addEventListener('click', onCardClick);
+
+// QR scan: read a QR code (including WeChat codes with a logo or rounded dots) from a photo or screenshot
+function grayOf(d){ const g = new Uint8ClampedArray(d.width * d.height), p = d.data;
+  for (let i = 0, j = 0; j < g.length; i += 4, j++) g[j] = (p[i]*299 + p[i+1]*587 + p[i+2]*114) / 1000;
+  return g; }
+function zxingRead(d){
+  if (!window.ZXing) return null;
+  const Z = window.ZXing, hints = new Map();
+  hints.set(Z.DecodeHintType.TRY_HARDER, true);
+  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.QR_CODE]);
+  const src = new Z.RGBLuminanceSource(grayOf(d), d.width, d.height);
+  for (const Bin of [Z.HybridBinarizer, Z.GlobalHistogramBinarizer]) {
+    for (const s of [src, src.invert()]) {
+      try { return new Z.QRCodeReader().decode(new Z.BinaryBitmap(new Bin(s)), hints).getText(); } catch(e) {}
+    }
+  }
+  return null;
+}
+function drawScaled(img, max, blur){
+  const s = Math.min(1, max / Math.max(img.width, img.height));
+  const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(img.width*s)); cv.height = Math.max(1, Math.round(img.height*s));
+  const ctx = cv.getContext('2d', {willReadFrequently:true});
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);   // transparent PNGs become white, not black
+  if (blur && 'filter' in ctx) ctx.filter = `blur(${blur}px)`;        // merges dotted / rounded modules
+  ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  return ctx.getImageData(0, 0, cv.width, cv.height);
+}
+async function decodeQR(img){
+  if ('BarcodeDetector' in window) {
+    try { const r = await new BarcodeDetector({formats:['qr_code']}).detect(img); if (r[0] && r[0].rawValue) return r[0].rawValue; } catch(e) {}
+  }
+  const passes = [[1000,0],[1600,0],[700,0],[500,0],[800,1],[600,1.5],[400,1],[1200,2],[300,0]];
+  for (const [max, blur] of passes) {
+    const d = drawScaled(img, max, blur);
+    if (typeof jsQR === 'function') { const r = jsQR(d.data, d.width, d.height, {inversionAttempts:'attemptBoth'}); if (r && r.data) return r.data; }
+    const z = zxingRead(d); if (z) return z;
+    await new Promise(r => setTimeout(r));   // keep the page responsive between passes
+  }
+  return null;
+}
+function onQrFile(e){
+  const file = e.target.files[0], msg = $('qrMsg'); e.target.value = '';
+  if (!file) return;
+  const show = (t, bad) => { msg.textContent = t; msg.style.color = bad ? 'var(--danger)' : 'var(--accent)'; msg.hidden = false; };
+  if (typeof jsQR !== 'function' && !window.ZXing && !('BarcodeDetector' in window)) { show(L("The QR reader didn't load. Check your connection and reload the page.",'لم يتم تحميل قارئ رمز QR. تحقّق من الاتصال ثم أعد تحميل الصفحة.'), true); return; }
+  show(L('Reading QR code…','جارٍ قراءة رمز QR…'));
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = async () => {
+      const text = ((await decodeQR(img)) || '').trim();
+      if (!text) { show(L('No QR code found. Crop the photo or screenshot to the code and try again. WeChat Mini Program codes (the round ones) can only be read inside WeChat.','لم يُعثر على رمز QR. قُصّ الصورة أو لقطة الشاشة حول الرمز وحاول مرة أخرى. رموز البرامج المصغّرة في WeChat (الدائرية) لا تُقرأ إلا داخل تطبيق WeChat.'), true); return; }
+      $('url').value = text;
+      const wechat = /^weixin:|wechat\.com|weixin\.qq\.com|wxp:/i.test(text);
+      show(safeURL(text) ? (wechat ? L('WeChat link captured from QR code.','تم التقاط رابط WeChat من رمز QR.') : L('Link captured from QR code.','تم التقاط الرابط من رمز QR.'))
+        : (wechat ? L('WeChat QR code read. It opens only in the WeChat app, so it was saved as text.','تمت قراءة رمز WeChat. يفتح فقط داخل تطبيق WeChat، لذلك حُفظ كنص.') : L("QR code read, but it isn't a web link. The text was added as is.",'تمت قراءة رمز QR لكنه ليس رابط موقع، فأُضيف النص كما هو.')), !safeURL(text) && !wechat);
+    };
+    img.onerror = () => show(L("That file couldn't be read as an image. Try a JPG or PNG.",'تعذّرت قراءة الملف كصورة. جرّب صورة بصيغة JPG أو PNG.'), true);
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+$('qrFile').addEventListener('change', onQrFile);
+$('qrPick').addEventListener('change', onQrFile);
+
+// Profit calculator (SAR); selling price is entered including 15% VAT
+const VAT = 0.15;
+const sar = v => { const n = (v < 0 ? '-' : '') + Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return L('SAR ' + n, n + ' ر.س'); };
+function fillCalcProducts(sel){
+  const o = $('cProduct');
+  o.innerHTML = `<option value="">${L('Enter cost manually','إدخال التكلفة يدويًا')}</option>` + cards.filter(c => !c.sample || cards.length === 1).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  o.value = sel && cards.some(c => c.id === sel) ? sel : '';
+}
+function calc(){
+  const cost = num($('cCost').value), qty = num($('cQty').value), over = num($('cOver').value) ?? 0, sell = num($('cSell').value);
+  const set = (id, t) => $(id).textContent = t;
+  if (cost === null || qty === null || qty <= 0) {
+    ['rProfit','rCost','rOver','rTotal','rGross','rVat','rRev','rUnitCost','rUnitProfit','rBreak'].forEach(id => set(id, '—'));
+    $('rProfit').className = ''; $('rMargin').textContent = ''; return;
+  }
+  const pc = cost * qty, oc = pc * over / 100, total = pc + oc, unitLanded = total / qty;
+  set('rCost', sar(pc)); set('rOver', sar(oc) + (over ? ` (${over}%)` : '')); set('rTotal', sar(total));
+  set('rUnitCost', sar(unitLanded)); set('rBreak', sar(unitLanded * (1 + VAT)));
+  if (sell === null) { set('rGross','—'); set('rVat','—'); set('rRev','—'); set('rUnitProfit','—'); set('rProfit','—'); $('rProfit').className=''; $('rMargin').textContent=''; return; }
+  const gross = sell * qty, rev = gross / (1 + VAT), profit = rev - total;
+  set('rGross', sar(gross)); set('rVat', sar(gross - rev)); set('rRev', sar(rev)); set('rUnitProfit', sar(profit / qty)); set('rProfit', sar(profit));
+  $('rProfit').className = profit < 0 ? 'neg' : '';
+  const m = rev ? profit / rev * 100 : 0, mk = total ? profit / total * 100 : 0;
+  $('rMargin').textContent = L(`Margin ${m.toFixed(1)}% · Markup ${mk.toFixed(1)}%`, `هامش الربح ${m.toFixed(1)}% · نسبة الإضافة ${mk.toFixed(1)}%`);
+  $('rMargin').className = 'chip ' + (profit < 0 ? 'bad' : 'good');
+}
+// Use MOQ as a starting quantity only when it is a plain number, optionally with a unit ("500", "1,000 pcs")
+function moqQty(c){ const m = /^\s*([\d,]+(?:\.\d+)?)\s*[\p{L}.]*\s*$/iu.exec(c.moq || ''); return m ? num(m[1]) : null; }
+function fillCalcVariants(c, sel){
+  const vs = variantsOf(c);
+  $('cVariantField').hidden = !vs.length;
+  $('cVariant').innerHTML = vs.map((v, i) => `<option value="${i}">${esc(variantName(v, i))} · ${fmt(v.sar)} ${L('SAR', 'ر.س')}</option>`).join('');
+  if (vs.length) $('cVariant').value = String(sel && vs[+sel] ? +sel : 0);
+}
+function calcCostOf(c){
+  const vs = variantsOf(c);
+  return num(vs.length ? (vs[+$('cVariant').value] || vs[0]).sar : pricesOf(c).sar) ?? '';
+}
+function openCalc(id){
+  fillCalcProducts(id);
+  const c = id ? cards.find(x => x.id === id) : null;
+  fillCalcVariants(c, 0);
+  if (c) { $('cCost').value = calcCostOf(c); if (!$('cQty').value && moqQty(c)) $('cQty').value = moqQty(c); }
+  calc(); showPage('calc');
+}
+$('cProduct').addEventListener('change', () => {
+  const c = cards.find(x => x.id === $('cProduct').value);
+  fillCalcVariants(c, 0);
+  if (c) { $('cCost').value = calcCostOf(c); if (moqQty(c)) $('cQty').value = moqQty(c); }
+  calc();
+});
+$('cVariant').addEventListener('change', () => {
+  const c = cards.find(x => x.id === $('cProduct').value);
+  if (c) { $('cCost').value = calcCostOf(c); calc(); }
+});
+$('cCost').addEventListener('input', () => { $('cProduct').value = ''; fillCalcVariants(null); });
+['cCost','cQty','cOver','cSell'].forEach(id => $(id).addEventListener('input', calc));
+$('goCalc').addEventListener('click', () => openCalc($('cProduct').value));
+$('calcHome').addEventListener('click', () => showPage('home'));
+
+// Share: draw the current product as a JPG (no buttons) and hand it to the viewer's save / share sheet
+// Online photos are fetched first, so they can be drawn into the share image
+async function asBlobURL(src){ if (!src || /^(data|blob):/.test(src)) return src; try { const res = await fetch(src); if (!res.ok) return ''; return URL.createObjectURL(await res.blob()); } catch(e) { return ''; } }
+async function asDataURL(src){ if (!src || /^data:/.test(src)) return src; try { const res = await fetch(src); if (!res.ok) return ''; const b = await res.blob(); return await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(b); }); } catch(e) { return ''; } }
+function loadImg(src){ return asBlobURL(src).then(u => new Promise(r => { if (!u) return r(null); const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = u; })); }
+function wrapLines(ctx, text, maxW, maxLines){
+  const words = String(text).split(/\s+/), lines = []; let line = '';
+  for (const w of words) {
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width <= maxW || !line) line = t; else { lines.push(line); line = w; }
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) { lines.length = maxLines; let l = lines[maxLines-1]; while (l && ctx.measureText(l + '…').width > maxW) l = l.slice(0, -1); lines[maxLines-1] = l + '…'; }
+  return lines.map(l => { while (ctx.measureText(l).width > maxW && l.length > 1) l = l.slice(0, -2) + '…'; return l; });
+}
+function wrapChars(ctx, text, maxW, maxLines){
+  const lines = []; let line = '';
+  for (const ch of String(text)) { if (ctx.measureText(line + ch).width > maxW && line) { lines.push(line); line = ch; } else line += ch; }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines-1] = lines[maxLines-1].slice(0, -1) + '…'; }
+  return lines;
+}
+function rrect(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+async function renderShareImage(c, photoIdx){
+  const css = getComputedStyle(document.documentElement), tok = n => css.getPropertyValue(n).trim();
+  const C = {fg:tok('--fg'), muted:tok('--muted'), line:tok('--line'), accent:tok('--accent'), leaf:tok('--leaf'), tag:tok('--tag'), sunk:tok('--sunk')};
+  const D = '"IBM Plex Sans Arabic","Archivo","Helvetica Neue",Arial,sans-serif', B = '"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,sans-serif', M = '"IBM Plex Mono",Menlo,monospace';
+  try { await Promise.all(['700 60px "IBM Plex Sans Arabic"','500 32px "IBM Plex Sans Arabic"','400 24px "IBM Plex Sans Arabic"','500 40px "IBM Plex Mono"'].map(f => document.fonts.load(f))); } catch(e) {}
+  const W = 1080, P = 60, IW = W, IH = 810, R = W - P, im = imgsOf(c), photo = im.length ? await loadImg(im[Math.min(photoIdx, im.length-1)]) : null;
+  const pr = pricesOf(c), uom = c.uom ? ' / ' + c.uom : '';
+  const dash = v => (v && String(v).trim()) ? String(v) : '—';
+  const facts = [[L('Category','الفئة'), c.category], [L('Supplier','المورّد'), c.supplier], [L('Unit','الوحدة'), c.uom],
+    [L('MOQ','الحد الأدنى للطلب'), c.moq ? c.moq + (c.uom && /^[\d.,\s]+$/.test(c.moq) ? ' ' + c.uom : '') : ''],
+    [L('Factory location','موقع المصنع'), c.factory], [L('Store ID','رقم المتجر'), c.storeId], [L('Dimensions','الأبعاد'), c.dims], [L('Weight','الوزن'), c.weight],
+    [L('Material','المادة'), c.material], [L('Date added','تاريخ الإضافة'), addedOf(c) ? fmtDate(addedOf(c)) : '']];
+  const biz = c.biz ? await loadImg(c.biz) : null;
+
+  // right-to-left text, anchored at its right edge
+  // Positions are written for Arabic (anchored at the right edge); in English they are mirrored to the left edge
+  const rtl = LANG === 'ar';
+  // each piece of text keeps its own direction (so "10 m" or "500 pcs" read correctly inside Arabic)
+  const dirOf = t => { const m = /[A-Za-z\u00C0-\u024F\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.exec(String(t)); return m && /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(m[0]) ? 'rtl' : 'ltr'; };
+  const T = (ctx, text, xRight, y, maxW, dir) => {
+    dir = dir || dirOf(text);
+    const x = rtl ? xRight : W - xRight;
+    ctx.direction = rtl ? dir : 'ltr'; ctx.textAlign = rtl ? 'right' : 'left';
+    maxW ? ctx.fillText(text, x, y, maxW) : ctx.fillText(text, x, y);
+    ctx.direction = 'ltr'; ctx.textAlign = 'left';
+  };
+  const label = (ctx, draw, t, xRight, y) => { if (draw) { ctx.fillStyle = C.muted; ctx.font = `500 25px ${B}`; T(ctx, t, xRight, y); } };
+  const layout = (ctx, draw) => {
+    ctx.textBaseline = 'top';
+    let y = P;
+    // name first
+    ctx.font = `700 64px ${D}`;
+    for (const l of wrapLines(ctx, c.name || L('Product','المنتج'), W - 2*P, 3)) { if (draw) { ctx.fillStyle = C.fg; ctx.font = `700 64px ${D}`; T(ctx, l, R, y); } y += 80; }
+    y += 20;
+    // product photo below the name, at half width, centered
+    if (photo) {
+      const pw = Math.round(IW * 0.5), ph = Math.round(IH * 0.5), px = Math.round((W - pw) / 2);
+      if (draw) {
+        const s = Math.max(pw / photo.width, ph / photo.height), w = photo.width * s, h = photo.height * s;
+        ctx.save(); rrect(ctx, px, y, pw, ph, 18); ctx.clip(); ctx.drawImage(photo, px + (pw - w)/2, y + (ph - h)/2, w, h); ctx.restore();
+      }
+      y += ph + 36;
+    }
+    // unit cost
+    if (draw) {
+      const t1 = L('Unit cost','تكلفة الوحدة') + (variantsOf(c).length ? uom : '');
+      ctx.fillStyle = C.fg; ctx.font = `600 28px ${B}`; ctx.direction = rtl ? 'rtl' : 'ltr'; const w0 = ctx.measureText(t1 + ' ').width; T(ctx, t1, R, y);
+      ctx.fillStyle = C.muted; ctx.font = `400 28px ${B}`; T(ctx, `(${L('entered in','أُدخلت بـ')} ${pr.cur})`, R - w0, y);
+    }
+    y += 50;
+    const vsx = variantsOf(c);
+    if (vsx.length) {
+      // variant table: name column, then RMB, USD and SAR (SAR highlighted)
+      const tw = W - 2*P, pw = 200, nw = tw - 3*pw, hh = 58, rh = 66, th = hh + rh * vsx.length;
+      const mx = x => rtl ? x : W - x;   // positions are written right-to-left and mirrored for English
+      if (draw) {
+        ctx.save(); rrect(ctx, P, y, tw, th, 18); ctx.clip();
+        ctx.fillStyle = C.sunk || '#f3f5f4'; ctx.fillRect(P, y, tw, hh);
+        ctx.fillStyle = C.leaf; ctx.fillRect(rtl ? P : W - P - pw, y, pw, th);
+        ctx.restore();
+        ctx.fillStyle = C.muted; ctx.font = `600 25px ${B}`;
+        T(ctx, L('Variant','الخيار'), R - 20, y + 16, nw - 32);
+        ['RMB', 'USD', 'SAR'].forEach((lab, k) => T(ctx, lab, R - nw - k*pw - 20, y + 16, pw - 32));
+        ctx.strokeStyle = C.line; ctx.lineWidth = 2;
+        vsx.forEach((v, i) => {
+          const ry = y + hh + i * rh;
+          ctx.beginPath(); ctx.moveTo(P, ry); ctx.lineTo(W - P, ry); ctx.stroke();
+          ctx.fillStyle = C.fg; ctx.font = `600 30px ${B}`;
+          T(ctx, wrapLines(ctx, variantName(v, i), nw - 36, 1)[0] || '', R - 20, ry + 17);
+          ctx.font = `500 31px ${M}`;
+          [fmt(v.rmb), fmt(v.usd), fmt(v.sar)].forEach((val, k) => T(ctx, val, R - nw - k*pw - 20, ry + 17, pw - 34, 'ltr'));
+        });
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) { const x = mx(R - nw - k*pw); ctx.moveTo(x, y); ctx.lineTo(x, y + th); }
+        ctx.stroke();
+        rrect(ctx, P, y, tw, th, 18); ctx.stroke();
+      }
+      y += th - 150;   // the shared "y += bh + 44" below adds the rest
+    }
+    const bw = (W - 2*P) / 3, bh = 150;
+    if (draw && !vsx.length) {
+      [['RMB', '¥' + fmt(pr.rmb), false], ['USD', '$' + fmt(pr.usd), false], ['SAR', fmt(pr.sar), true]].forEach(([lab, val, hi], i) => {
+        const x = W - P - (i + 1) * bw;
+        if (hi) { ctx.save(); rrect(ctx, P, y, W - 2*P, bh, 18); ctx.clip(); ctx.fillStyle = C.leaf; ctx.fillRect(rtl ? x : W - x - bw, y, bw, bh); ctx.restore(); }
+        ctx.fillStyle = C.muted; ctx.font = `500 26px ${B}`; T(ctx, lab + uom, x + bw - 24, y + 24, bw - 40);
+        ctx.fillStyle = C.fg; ctx.font = `500 46px ${M}`; T(ctx, val, x + bw - 24, y + 72, bw - 40, 'ltr');
+      });
+      ctx.strokeStyle = C.line; ctx.lineWidth = 2; rrect(ctx, P, y, W - 2*P, bh, 18); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(P + bw, y); ctx.lineTo(P + bw, y + bh); ctx.moveTo(P + 2*bw, y); ctx.lineTo(P + 2*bw, y + bh); ctx.stroke();
+    }
+    y += bh + 44;
+    // all details, two columns (first column on the right)
+    const cw = (W - 2*P - 40) / 2;
+    for (let i = 0; i < facts.length; i += 2) {
+      let rowH = 0;
+      for (let j = 0; j < 2; j++) {
+        if (!facts[i + j]) continue;
+        const [lab, val] = facts[i + j], xr = R - j * (cw + 40);
+        ctx.font = `500 32px ${B}`; const lines = wrapLines(ctx, dash(val), cw, 2);
+        label(ctx, draw, lab, xr, y);
+        if (draw) { ctx.fillStyle = C.fg; ctx.font = `500 32px ${B}`; lines.forEach((l, k) => T(ctx, l, xr, y + 38 + k * 44)); }
+        rowH = Math.max(rowH, 38 + lines.length * 44);
+      }
+      y += rowH + 26;
+    }
+    y += 6;
+    // remarks
+    ctx.font = `500 32px ${B}`;
+    const rl = String(dash(c.remarks)).split(/\n+/).flatMap(par => wrapLines(ctx, par, W - 2*P - 48, 8)).slice(0, 8);
+    const rh = 22 + 38 + rl.length * 44 + 18;
+    if (draw) {
+      ctx.fillStyle = C.leaf; rrect(ctx, P, y, W - 2*P, rh, 16); ctx.fill();
+      label(ctx, draw, L('Remarks','ملاحظات'), R - 24, y + 22);
+      ctx.fillStyle = C.fg; ctx.font = `500 32px ${B}`; rl.forEach((l, k) => T(ctx, l, R - 24, y + 60 + k * 44));
+    }
+    y += rh + 32;
+    // product link (full address so it can be typed or copied)
+    label(ctx, draw, L('Product link','رابط المنتج'), R, y); y += 38;
+    ctx.font = `500 30px ${B}`;
+    for (const l of wrapChars(ctx, dash(c.url), W - 2*P, 3)) { if (draw) { ctx.fillStyle = c.url ? C.accent : C.fg; ctx.font = `500 30px ${B}`; T(ctx, l, R, y, 0, 'ltr'); } y += 40; }
+    y += 26;
+    // supplier business card
+    label(ctx, draw, L('Supplier business card','بطاقة عمل المورّد'), R, y); y += 42;
+    if (biz) {
+      const maxW = (W - 2*P) * 0.7, maxH = 560 * 0.7, s = Math.min(maxW / biz.width, maxH / biz.height), w = biz.width * s, h = biz.height * s, bx = (W - w) / 2;
+      if (draw) {
+        ctx.save(); rrect(ctx, bx, y, w, h, 14); ctx.clip(); ctx.drawImage(biz, bx, y, w, h); ctx.restore();
+        ctx.strokeStyle = C.line; ctx.lineWidth = 2; rrect(ctx, bx, y, w, h, 14); ctx.stroke();
+      }
+      y += h;
+    } else {
+      if (draw) { ctx.fillStyle = C.fg; ctx.font = `500 32px ${B}`; T(ctx, '—', R, y); }
+      y += 42;
+    }
+    y += P;
+    return Math.ceil(y);
+  };
+
+  const probe = document.createElement('canvas').getContext('2d');
+  const H = layout(probe, false);
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+  layout(ctx, true);
+  return cv;
+}
+let sharing = false;
+$('shareBtn').addEventListener('click', async () => {
+  const c = cards[idx]; if (!c || sharing) return;
+  sharing = true; const btn = $('shareBtn'), label = btn.lastChild.textContent; btn.lastChild.textContent = L('Preparing…','جارٍ التحضير…');
+  try {
+    const slide = $('gallery').children[idx], box = slide && slide.querySelector('.img');
+    const cv = await renderShareImage(c, box ? +box.dataset.i || 0 : 0);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+    const fname = (c.name || 'product').replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 80) + '.jpg';
+    let saved = false;
+    try {
+      const dl = (window.claude && claude.use) ? await Promise.race([claude.use('downloads'), new Promise(r => setTimeout(() => r(null), 4000))]) : null;
+      if (dl) { await dl.save({filename: fname, data: blob}); saved = true; toast(L('Image ready to share','الصورة جاهزة للمشاركة')); }
+    } catch(err) {
+      if (err && err.code === 'declined') { saved = true; }
+      else if (err && err.code === 'rate_limited') { saved = true; toast(L('A save prompt is already open','هناك نافذة حفظ مفتوحة بالفعل')); }
+    }
+    if (!saved) {
+      // opened directly in a browser: use the phone's own share sheet (WhatsApp, WeChat, Files…)
+      try {
+        const file = new File([blob], fname, {type: 'image/jpeg'});
+        if (navigator.canShare && navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: c.name || ''}); saved = true; }
+      } catch(e) { if (e && e.name === 'AbortError') saved = true; }
+    }
+    if (!saved) {
+      $('viewerImg').src = URL.createObjectURL(blob); $('viewerImg').alt = c.name || L('Product','المنتج');
+      $('viewerNote').textContent = L('Press and hold the image to save or share it.','اضغط مطولًا على الصورة لحفظها أو مشاركتها.'); $('viewerNote').hidden = false;
+      $('viewer').hidden = false; $('viewerClose').focus();
+    }
+  } catch(e) {
+    toast(L("Couldn't create the image. Try again.",'تعذّر إنشاء الصورة. حاول مرة أخرى.'));
+  } finally { sharing = false; btn.lastChild.textContent = label; }
+});
+
+// Supplier Database: products grouped by supplier
+function supplierGroups(){
+  const map = new Map();
+  cards.forEach((c, i) => {
+    const name = (c.supplier || '').trim(), key = name.toLowerCase() || '\u0000';
+    if (!map.has(key)) map.set(key, {name: name || L('No supplier','بدون مورّد'), none: !name, items: []});
+    map.get(key).items.push({c, i});
+  });
+  return [...map.values()].sort((a, b) => a.none - b.none || a.name.localeCompare(b.name));
+}
+function renderSuppliers(){
+  const q = $('supSearch').value.trim().toLowerCase(), groups = supplierGroups();
+  const list = q ? groups.filter(g => g.name.toLowerCase().includes(q) || g.items.some(({c}) => (c.name||'').toLowerCase().includes(q) || (c.factory||'').toLowerCase().includes(q))) : groups;
+  const realCount = groups.filter(g => !g.none).length;
+  $('supCounter').textContent = realCount ? L(realCount === 1 ? `${realCount} supplier` : `${realCount} suppliers`, `عدد الموردين: ${realCount}`) : '';
+  if (!cards.length) { $('supList').innerHTML = `<p class="empty">${L('No products saved yet. Add a product with a supplier name to see it here.','لا توجد منتجات محفوظة بعد. أضف منتجًا مع اسم المورّد ليظهر هنا.')}</p>`; return; }
+  if (!list.length) { $('supList').innerHTML = `<p class="empty">${L('No supplier matches that search.','لا يوجد مورّد يطابق البحث.')}</p>`; return; }
+  const chev = '<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+  $('supList').innerHTML = list.map(g => {
+    const biz = (g.items.find(({c}) => c.biz) || {}).c;
+    const factories = [...new Set(g.items.map(({c}) => (c.factory||'').trim()).filter(Boolean))];
+    const storeIds = [...new Set(g.items.map(({c}) => (c.storeId||'').trim()).filter(Boolean))];
+    const bc = biz ? `<img class="bc" src="${biz.biz}" alt="${L('Business card','بطاقة العمل')}" data-biz="${biz.id}">` : `<span class="bc ph" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M14 10h4M14 13.5h3"/></svg></span>`;
+    const rows = g.items.map(({c}) => {
+      const im = imgsOf(c)[0], pr = pricesOf(c);
+      return `<li><details class="prod"><summary>${im ? `<img src="${im}" alt="">` : '<span class="noimg"></span>'}<span class="nm">${esc(c.name)}</span><span class="pc">${rowPrice(c)}</span>${chev}</summary><div class="pbody">${cardHTML(c, true)}</div></details></li>`;
+    }).join('');
+    return `<details class="sup"${q || list.length === 1 ? ' open' : ''}><summary>${bc}<span class="who"><strong>${esc(g.name)}</strong><small>${g.none ? L('Products without a supplier name','منتجات بدون اسم مورّد') : `${L('Factory','المصنع')}: ${factories.length ? esc(factories.join(' · ')) : '—'} · ${L('Store ID','رقم المتجر')}: ${esc(storeIds.join(' · ')) || '—'}`}</small></span><span class="n">${g.items.length}</span>${chev}</summary><ul>${rows}</ul></details>`;
+  }).join('');
+}
+$('supList').addEventListener('click', e => {
+  const bizImg = e.target.closest('[data-biz]');
+  if (bizImg) { e.preventDefault(); const c = cards.find(x => x.id === bizImg.dataset.biz); if (c) { $('viewerImg').src = c.biz; $('viewer').hidden = false; $('viewerClose').focus(); } return; }
+  onCardClick(e);
+});
+
+// ---- Export / import: products as CSV, images as ZIP ----
+const CSV_COLS = ['id','date_added','date_updated','name','category','supplier','factory_location','store_id','product_link','dimensions','weight','material','unit_cost','currency','cost_rmb','cost_usd','cost_sar','moq','unit','remarks','photos','business_card','variants'];
+const csvCell = v => { v = v == null ? '' : String(v); return /[",\r\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+function parseCSV(text){
+  text = text.replace(/^﻿/, '');
+  const first = text.split(/\r?\n/, 1)[0] || '';
+  const delim = [',', ';', '\t'].map(d => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"') { if (text[i+1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === delim) { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i+1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += ch;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+const EXT = {'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','image/svg+xml':'svg'};
+const MIME = {jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', webp:'image/webp', gif:'image/gif', svg:'image/svg+xml'};
+function imgName(name, dataURL){ const m = /^data:([^;,]+)/.exec(dataURL || ''); return m ? name + '.' + (EXT[m[1]] || 'jpg') : ''; }
+function addToZip(zip, name, dataURL){
+  const m = /^data:([^;,]+)(;base64)?,(.*)$/s.exec(dataURL || ''); if (!m) return '';
+  const file = name + '.' + (EXT[m[1]] || 'jpg');
+  if (m[2]) zip.file(file, m[3], {base64: true}); else zip.file(file, decodeURIComponent(m[3]));
+  return file;
+}
+function dtMsg(text, bad){ const el = $('dtMsg'); el.textContent = text; el.className = 'dtmsg' + (bad ? ' bad' : ''); el.hidden = !text; }
+// Save a generated file: the app viewer's save prompt when it is offered; otherwise, when the page is
+// opened directly in a browser, a normal download, or the phone's share sheet.
+let isTopLevel = true; try { isTopLevel = window.self === window.top; } catch(e) { isTopLevel = false; }
+async function saveBlob(filename, blob){
+  let dl = null;
+  try { if (window.claude && claude.use) dl = await Promise.race([claude.use('downloads'), new Promise(r => setTimeout(() => r(null), 4000))]); } catch(e) {}
+  if (dl) {
+    try { await dl.save({filename, data: blob}); return 'saved'; }
+    catch(err) {
+      const code = err && err.code;
+      if (code === 'declined') return 'declined';
+      if (code === 'rate_limited') return 'busy';
+      if (!['unavailable', 'not_granted', 'capability_disabled', 'capability_removed'].includes(code)) return 'error';
+    }
+  }
+  const viaLink = () => {
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = filename; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return 'downloaded';
+  };
+  if (isTopLevel) { try { return viaLink(); } catch(e) {} }
+  try {
+    const file = new File([blob], filename, {type: blob.type || 'application/octet-stream'});
+    if (navigator.canShare && navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: filename}); return 'shared'; }
+  } catch(e) { if (e && e.name === 'AbortError') return 'declined'; }
+  try { return viaLink(); } catch(e) {}
+  return 'unavailable';
+}
+function saveResultMsg(r, okMsg){
+  if (r === 'saved' || r === 'shared') return [okMsg, false];
+  if (r === 'downloaded') return [okMsg + ' ' + L('Check your Downloads folder.', 'تحقّق من مجلد التنزيلات.'), false];
+  if (r === 'declined') return [L('Export cancelled.', 'تم إلغاء التصدير.'), false];
+  if (r === 'busy') return [L('A save prompt is already open.', 'هناك نافذة حفظ مفتوحة بالفعل.'), true];
+  return [L("This screen can't save files. Open the app in the Claude app or in your phone's browser and try again.", 'لا يمكن حفظ الملفات من هذه الشاشة. افتح التطبيق في تطبيق Claude أو في متصفح هاتفك وحاول مرة أخرى.'), true];
+}
+const stampToday = () => new Date().toISOString().slice(0, 10);
+async function exportBackup(){
+  const list = cards.filter(c => !c.sample);
+  if (!list.length) { dtMsg(L('There are no products to export yet.', 'لا توجد منتجات للتصدير بعد.'), true); return; }
+  if (typeof JSZip !== 'function') { dtMsg(L("The export tool didn't load. Check your connection and reload the page.", 'لم يتم تحميل أداة التصدير. تحقّق من الاتصال ثم أعد تحميل الصفحة.'), true); return; }
+  const btn = $('exportBtn'); btn.disabled = true; dtMsg(L('Preparing file…', 'جارٍ تجهيز الملف…'));
+  try {
+    const zip = new JSZip(), img = zip.folder('images'); let nImg = 0;
+    const rows = [CSV_COLS];
+    for (const c of list) {
+      const photos = []; let pi = 0;
+      for (const d of imgsOf(c)) { pi++; const f = addToZip(img, `${c.id}_photo${pi}`, await asDataURL(d)); if (f) photos.push(f); }
+      const card = c.biz ? addToZip(img, `${c.id}_card`, await asDataURL(c.biz)) : '';
+      nImg += photos.length + (card ? 1 : 0);
+      const pr = pricesOf(c);
+      rows.push([c.id, addedOf(c) || '', c.updated || addedOf(c) || '', c.name, c.category, c.supplier, c.factory, c.storeId, c.url, c.dims, c.weight, c.material,
+        c.cost, pr.cur, pr.rmb, pr.usd, pr.sar, c.moq, c.uom, c.remarks, photos.join('|'), card, variantsText(c)]);
+    }
+    zip.file('products.csv', '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n'));
+    const blob = await zip.generateAsync({type: 'blob', compression: 'STORE'});
+    const r = await saveBlob(`products-backup-${stampToday()}.zip`, new Blob([blob], {type: 'application/zip'}));
+    const [m, bad] = saveResultMsg(r, L(`Exported ${list.length} products and ${nImg} images.`, `تم تصدير ${list.length} منتج و${nImg} صورة.`)); dtMsg(m, bad);
+  } catch(e) { dtMsg(L('Export failed. Try again.', 'فشل التصدير. حاول مرة أخرى.'), true); }
+  finally { btn.disabled = false; }
+}
+async function importData(files){
+  const plainCsv = files.find(f => /\.csv$/i.test(f.name) || f.type === 'text/csv');
+  const zipFile = files.find(f => /\.zip$/i.test(f.name) || /zip/.test(f.type));
+  if (!plainCsv && !zipFile) { dtMsg(L('Choose a backup ZIP file exported from this app.', 'اختر ملف النسخة الاحتياطية (ZIP) المُصدَّر من هذا التطبيق.'), true); return; }
+  let csvText = plainCsv ? await plainCsv.text() : '';
+  dtMsg(L('Importing…', 'جارٍ الاستيراد…'));
+  try {
+    // images from the ZIP, keyed by file name
+    const images = {};
+    if (zipFile) {
+      if (typeof JSZip !== 'function') { dtMsg(L("The import tool didn't load. Check your connection and reload the page.", 'لم يتم تحميل أداة الاستيراد. تحقّق من الاتصال ثم أعد تحميل الصفحة.'), true); return; }
+      const z = await JSZip.loadAsync(zipFile);
+      for (const f of Object.values(z.files)) {
+        if (f.dir) continue;
+        const name = f.name.split('/').pop(), ext = (name.split('.').pop() || '').toLowerCase();
+        if (ext === 'csv' && !name.startsWith('.') && !csvText) { csvText = await f.async('string'); continue; }
+        if (!MIME[ext] || name.startsWith('.')) continue;
+        images[name] = `data:${MIME[ext]};base64,` + await f.async('base64');
+      }
+    }
+    let added = 0, updated = 0, attached = 0, kept = 0;
+    const csvFile = !!csvText;
+    if (csvFile) {
+      const rows = parseCSV(csvText);
+      if (rows.length < 2) { dtMsg(L('The CSV file has no product rows.', 'لا يحتوي ملف CSV على أي منتجات.'), true); return; }
+      const head = rows[0].map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+      const col = k => head.indexOf(k);
+      if (col('name') < 0) { dtMsg(L('This CSV is missing the "name" column. Use a file exported from this app.', 'ملف CSV هذا لا يحتوي على عمود "name". استخدم ملفًا مُصدَّرًا من هذا التطبيق.'), true); return; }
+      const get = (r, k) => { const i = col(k); return i < 0 ? '' : (r[i] || '').trim(); };
+      rows.slice(1).forEach((r, n) => {
+        const name = get(r, 'name'); if (!name) return;
+        const id = get(r, 'id') || (Date.now() + n).toString(36);
+        const old = cards.find(c => c.id === id);
+        const upd = get(r, 'date_updated');
+        if (old && old.updated && (!upd || upd < old.updated)) { kept++; return; }   // this phone has a newer version
+        const cur = get(r, 'currency').toUpperCase() === 'USD' ? 'USD' : 'RMB';
+        const variants = parseVariants(get(r, 'variants'), cur);
+        const cost = get(r, 'unit_cost') || (variants[0] && variants[0].cost) || (cur === 'USD' ? get(r, 'cost_usd') : get(r, 'cost_rmb'));
+        const conv = convertAll(cost, cur);
+        const photoNames = get(r, 'photos').split('|').map(x => x.trim()).filter(Boolean);
+        const photos = photoNames.map(x => images[x]).filter(Boolean);
+        const bizName = get(r, 'business_card');
+        const c = {
+          id, name, category: get(r, 'category'), supplier: get(r, 'supplier'), factory: get(r, 'factory_location'), storeId: get(r, 'store_id'),
+          url: get(r, 'product_link'), dims: get(r, 'dimensions'), weight: get(r, 'weight'), material: get(r, 'material'),
+          cost, cur, rmb: get(r, 'cost_rmb') || conv.rmb, usd: get(r, 'cost_usd') || conv.usd, sar: get(r, 'cost_sar') || conv.sar,
+          moq: get(r, 'moq'), uom: get(r, 'unit'), remarks: get(r, 'remarks'), variants,
+          imgs: photos.length ? photos : (old ? imgsOf(old) : []),
+          biz: (bizName && images[bizName]) || (old ? old.biz || '' : ''),
+          added: get(r, 'date_added') || (old && addedOf(old)) || new Date().toISOString()
+        };
+        if (upd) c.updated = upd;
+        attached += photos.length + (bizName && images[bizName] ? 1 : 0);
+        if (old) { cards[cards.indexOf(old)] = c; updated++; } else { cards.push(c); added++; }
+        const sk = supKey(c.supplier);
+        if (sk) suppliers[sk] = {name: c.supplier, factory: c.factory, storeId: c.storeId};
+      });
+      cards = cards.filter(c => !c.sample);
+      cards.sort((a, b) => String(addedOf(b)).localeCompare(String(addedOf(a))));
+    } else {
+      // ZIP only: attach images to existing products by file name (<id>_photoN / <id>_card)
+      const byId = {};
+      for (const [name, data] of Object.entries(images)) {
+        const m = /^(.+?)_(photo(\d+)|card)\.\w+$/i.exec(name); if (!m) continue;
+        (byId[m[1]] = byId[m[1]] || {photos: [], card: ''});
+        if (m[3]) byId[m[1]].photos[+m[3] - 1] = data; else byId[m[1]].card = data;
+      }
+      for (const [id, v] of Object.entries(byId)) {
+        const c = cards.find(x => x.id === id); if (!c) continue;
+        const ph = v.photos.filter(Boolean);
+        if (ph.length) { c.imgs = ph; attached += ph.length; }
+        if (v.card) { c.biz = v.card; attached++; }
+        updated++;
+      }
+      if (!updated) { dtMsg(L("None of the images in this ZIP match a saved product. Import the CSV file together with the ZIP.", 'لا تطابق أي صورة في ملف ZIP منتجًا محفوظًا. استورد ملف CSV مع ملف ZIP معًا.'), true); return; }
+    }
+    const ok = store.set(KEY, cards); store.set(SKEY, suppliers); renderSupList();
+    idx = 0; renderGallery(); updateNav();
+    const msg = csvFile
+      ? L(`Imported ${added + updated} products (${added} new, ${updated} updated) and ${attached} images.`, `تم استيراد ${added + updated} منتج (${added} جديد، ${updated} محدَّث) و${attached} صورة.`)
+      : L(`Added ${attached} images to ${updated} products.`, `تمت إضافة ${attached} صورة إلى ${updated} منتج.`);
+    const keptMsg = kept ? ' ' + L(`${kept} kept as they are, because this phone has a newer version.`, `تم الإبقاء على ${kept} كما هي لأن هذا الهاتف يحتوي على نسخة أحدث.`) : '';
+    dtMsg(ok ? msg + keptMsg : msg + keptMsg + ' ' + L("Your phone's browser storage is full, so some data may not be kept after closing the app.", 'مساحة التخزين في متصفح هاتفك ممتلئة، لذا قد لا تُحفظ بعض البيانات بعد إغلاق التطبيق.'), !ok);
+    if (csvFile && !zipFile && cards.some(c => !imgsOf(c).length)) dtMsg($('dtMsg').textContent + ' ' + L('This CSV had no images; use the backup ZIP to bring photos too.', 'لم يتضمن ملف CSV أي صور؛ استخدم ملف النسخة الاحتياطية ZIP لاستيراد الصور أيضًا.'), !ok);
+    return true;
+  } catch(e) {
+    dtMsg(L("Couldn't read that file. Use the CSV and ZIP files exported from this app.", 'تعذّرت قراءة الملف. استخدم ملفات CSV وZIP المُصدَّرة من هذا التطبيق.'), true);
+  }
+}
+$('exportBtn').addEventListener('click', exportBackup);
+$('importFile').addEventListener('change', e => { const files = [...e.target.files]; e.target.value = ''; if (files.length) importData(files); });
+
+// ---- Start page: import the latest backup before using the app ----
+function renderGate(){
+  const n = cards.filter(c => !c.sample).length;
+  const UP = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 19h14"/></svg>';
+  $('gatePage').innerHTML = `
+    <div class="langswitch" role="group" aria-label="Language / اللغة">
+      <button type="button" data-glang="en" lang="en" aria-pressed="${LANG === 'en'}">English</button>
+      <button type="button" data-glang="ar" lang="ar" aria-pressed="${LANG === 'ar'}">العربية</button>
+      <button type="button" data-glang="zh" lang="zh" aria-pressed="${LANG === 'zh'}">中文</button>
+    </div>
+    <div class="gatecard">
+      <span class="gateicon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>
+      <h1 id="gateTitle">${L('Import your latest backup', 'استورد أحدث نسخة احتياطية')}</h1>
+      <p>${L('Before you start, import your most recent backup file', 'قبل البدء، استورد أحدث ملف نسخة احتياطية')} (<code>products-backup-….zip</code>) ${L('so this phone has the latest products.', 'ليحتوي هذا الهاتف على أحدث المنتجات.')}</p>
+      <label class="gatebtn" for="gateFile" id="gateBtn">${UP}<span>${L('Choose backup file', 'اختر ملف النسخة الاحتياطية')}</span></label>
+      <input id="gateFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,.csv,text/csv" hidden>
+      <p class="gatemsg" id="gateMsg" role="status" hidden></p>
+      ${n ? `<p>${L(`This phone has ${n} saved ${n === 1 ? 'product' : 'products'}. Anything you changed on this phone after the backup was made is kept.`, `يحتوي هذا الهاتف على ${n} منتج محفوظ. أي تعديل أجريته على هذا الهاتف بعد إنشاء النسخة الاحتياطية سيبقى كما هو.`)}</p>`
+          : `<button type="button" class="gatefresh" id="gateFresh">${L("I don't have a backup yet. Start with an empty database", 'ليس لدي نسخة احتياطية بعد. ابدأ بقاعدة بيانات فارغة')}</button>`}
+    </div>`;
+  $('gatePage').querySelectorAll('[data-glang]').forEach(b => b.addEventListener('click', () => { if (b.dataset.glang !== LANG) { setLang(b.dataset.glang, true); renderGate(); } }));
+  $('gateFile').addEventListener('change', async e => {
+    const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+    const msg = $('gateMsg'), btn = $('gateBtn');
+    msg.className = 'gatemsg'; msg.textContent = L('Importing…', 'جارٍ الاستيراد…'); msg.hidden = false; btn.setAttribute('aria-disabled', 'true');
+    let ok = false;
+    try { ok = await importData(files); } catch(err) { ok = false; }
+    btn.removeAttribute('aria-disabled');
+    if (ok) { const done = $('dtMsg').textContent; showPage('home'); toast(done || L('Backup imported', 'تم استيراد النسخة الاحتياطية')); }
+    else { msg.className = 'gatemsg bad'; msg.textContent = $('dtMsg').textContent || L("Couldn't read that file. Choose the backup ZIP exported from this app.", 'تعذّرت قراءة الملف. اختر ملف النسخة الاحتياطية ZIP المُصدَّر من هذا التطبيق.'); }
+  });
+  const fresh = $('gateFresh'); if (fresh) fresh.addEventListener('click', () => showPage('home'));
+}
+
+setLang(LANG, false);
+renderVariantsUI();
+renderSupList();
+$('dateAdded').textContent = fmtDate(new Date().toISOString());
+setImg(''); setBiz(''); setCur(store.get(CKEY, 'RMB')); renderPreview(); renderGallery();
+
+$('signOutBtn').textContent = L('Sign out', 'تسجيل الخروج');
+$('signOutBtn').addEventListener('click', () => window.APP_SIGN_OUT());
+if (cards.some(c => !c.sample)) showPage('home'); else { renderGate(); showPage('gate'); }
+document.documentElement.classList.add('app-ready');
+</script>
+<script>
+document.querySelector('#boot span').textContent = L('Loading your data…', 'جارٍ تحميل بياناتك…');
+window.APP_STORAGE_READY.then(() => {
+  const s = document.createElement('script');
+  s.textContent = document.getElementById('app-main').textContent;
+  document.body.appendChild(s);
+  document.getElementById('boot').remove();
+});
+</script>
 </body>
 </html>
