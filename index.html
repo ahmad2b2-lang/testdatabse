@@ -878,7 +878,7 @@ if (typeof JSZip !== 'function') (function(){
     if (uploaded.has(key)) return 'sb:' + uploaded.get(key);
     const blob = dataURLtoBlob(s); if (!blob) return '';
     const path = `${id.replace(/[^\w-]/g, '_')}/${await nameFor(s)}.${EXT[blob.type] || 'jpg'}`;
-    const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: blob.type, upsert: true });
+    const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: blob.type, upsert: true, cacheControl: '31536000' });
     if (error) throw error;
     uploaded.set(key, path);
     return 'sb:' + path;
@@ -993,12 +993,19 @@ if (typeof JSZip !== 'function') (function(){
     for (const r of cardRows) byId[r.id] = Object.assign({}, r.data, { id: r.id });
     // turn saved photo paths into viewable (signed) links
     const paths = [...new Set(Object.values(byId).flatMap(c => refsOf(c)).filter(s => s.startsWith('sb:')).map(s => s.slice(3)))];
-    const signed = new Map();
-    for (let i = 0; i < paths.length; i += 300) {
-      const { data, error } = await sb.storage.from(BUCKET).createSignedUrls(paths.slice(i, i + 300), SIGN_SECONDS);
+    // A photo link is reused until it has less than a day left, so the browser's saved copy stays valid
+    // (a brand-new link each visit would make the phone download every photo again).
+    const URLS_KEY = 'pcm.photolinks.v1', now = Date.now();
+    const kept = lsTry(() => JSON.parse(localStorage.getItem(URLS_KEY) || '{}')) || {};
+    const signed = new Map(), fresh = {};
+    for (const p of paths) { const k = kept[p]; if (k && k.u && k.e - now > 864e5) { signed.set(p, k.u); fresh[p] = k; } }
+    const need = paths.filter(p => !signed.has(p));
+    for (let i = 0; i < need.length; i += 300) {
+      const { data, error } = await sb.storage.from(BUCKET).createSignedUrls(need.slice(i, i + 300), SIGN_SECONDS);
       if (error) throw error;
-      for (const x of data || []) if (x && x.signedUrl && !x.error) signed.set(x.path, x.signedUrl);
+      for (const x of data || []) if (x && x.signedUrl && !x.error) { signed.set(x.path, x.signedUrl); fresh[x.path] = {u: x.signedUrl, e: now + SIGN_SECONDS * 1000}; }
     }
+    lsTry(() => localStorage.setItem(URLS_KEY, JSON.stringify(fresh)));
     const view = s => typeof s === 'string' && s.startsWith('sb:') ? (signed.get(s.slice(3)) || '') : s;
     for (const c of Object.values(byId)) {
       const before = refsOf(c).filter(s => s.startsWith('sb:')).map(s => s.slice(3));
@@ -1279,10 +1286,10 @@ function cardHTML(c, actions){
   const pr = pricesOf(c), im = imgsOf(c), vs = variantsOf(c);
   const uom = c.uom ? ' / ' + esc(c.uom) : '';
   const imgBlock = im.length
-    ? `<button type="button" class="zoom" data-zoom="${c.id}" aria-label="${L('Enlarge photo','تكبير الصورة')}"><img src="${im[0]}" alt="${esc(c.name)}"></button>` + (im.length > 1 ? `<span class="pcount">1/${im.length}</span><button type="button" class="imgnext" data-next="${c.id}" aria-label="${L('Next photo','الصورة التالية')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>` : '')
+    ? `<button type="button" class="zoom" data-zoom="${c.id}" aria-label="${L('Enlarge photo','تكبير الصورة')}"><img src="${im[0]}" alt="${esc(c.name)}" loading="lazy" decoding="async"></button>` + (im.length > 1 ? `<span class="pcount">1/${im.length}</span><button type="button" class="imgnext" data-next="${c.id}" aria-label="${L('Next photo','الصورة التالية')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>` : '')
     : `<span class="nophoto">${L('No product photo','لا توجد صورة للمنتج')}</span>`;
   const link = c.url ? linkHTML(c.url) : `<p class="muted-row">${L('Product link','رابط المنتج')}: —</p>`;
-  const biz = c.biz ? `<button type="button" class="bizbtn" data-view="${c.id}"><img src="${c.biz}" alt="">${L('Supplier business card','بطاقة عمل المورّد')}</button>` : `<p class="muted-row">${L('Supplier business card','بطاقة عمل المورّد')}: —</p>`;
+  const biz = c.biz ? `<button type="button" class="bizbtn" data-view="${c.id}"><img src="${c.biz}" alt="" loading="lazy" decoding="async">${L('Supplier business card','بطاقة عمل المورّد')}</button>` : `<p class="muted-row">${L('Supplier business card','بطاقة عمل المورّد')}: —</p>`;
   return `<article class="pcard">
     <div class="img" data-card="${c.id || ''}" data-i="0">${imgBlock}</div>
     <div class="body">
@@ -1377,7 +1384,7 @@ function setImgs(arr){
   if (n) t.src = imgsData[0]; else t.removeAttribute('src');
   t.hidden = !n; t.parentElement.classList.toggle('has', !!n);
   $('photoCount').textContent = n > 1 ? n : ''; $('photoCount').hidden = n < 2;
-  $('photoStrip').innerHTML = imgsData.map((src, i) => `<div class="ph"><img src="${src}" alt=""><button type="button" data-rm="${i}" aria-label="Remove photo ${i+1}">×</button></div>`).join('');
+  $('photoStrip').innerHTML = imgsData.map((src, i) => `<div class="ph"><img src="${src}" alt="" loading="lazy"><button type="button" data-rm="${i}" aria-label="Remove photo ${i+1}">×</button></div>`).join('');
   $('photoStrip').hidden = !n;
 }
 function setImg(src){ setImgs(src ? [src] : []); }
@@ -1741,7 +1748,7 @@ function cmpPick(slot, id){
 }
 function cmpHead(c, tag){
   const im = imgsOf(c);
-  return `<div>${im.length ? `<img src="${im[0]}" alt="">` : '<span class="noimg"></span>'}<span class="who"><span class="tagab">${tag}</span><strong dir="auto">${esc(c.name)}</strong><small dir="auto">${esc((c.supplier || '').trim() || L('No supplier', 'بدون مورّد'))}</small></span></div>`;
+  return `<div>${im.length ? `<img src="${im[0]}" alt="" loading="lazy">` : '<span class="noimg"></span>'}<span class="who"><span class="tagab">${tag}</span><strong dir="auto">${esc(c.name)}</strong><small dir="auto">${esc((c.supplier || '').trim() || L('No supplier', 'بدون مورّد'))}</small></span></div>`;
 }
 function renderCompare(){
   const list = cards.filter(c => !c.sample).sort((x, y) => (x.supplier || '').localeCompare(y.supplier || '') || (x.name || '').localeCompare(y.name || ''));
@@ -2435,10 +2442,10 @@ function renderSuppliers(){
     const biz = (g.items.find(({c}) => c.biz) || {}).c;
     const factories = [...new Set(g.items.map(({c}) => (c.factory||'').trim()).filter(Boolean))];
     const storeIds = [...new Set(g.items.map(({c}) => (c.storeId||'').trim()).filter(Boolean))];
-    const bc = biz ? `<img class="bc" src="${biz.biz}" alt="${L('Business card','بطاقة العمل')}" data-biz="${biz.id}">` : `<span class="bc ph" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M14 10h4M14 13.5h3"/></svg></span>`;
+    const bc = biz ? `<img class="bc" loading="lazy" src="${biz.biz}" alt="${L('Business card','بطاقة العمل')}" data-biz="${biz.id}">` : `<span class="bc ph" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M14 10h4M14 13.5h3"/></svg></span>`;
     const rows = g.items.map(({c}) => {
       const im = imgsOf(c)[0], pr = pricesOf(c);
-      return `<li><details class="prod"><summary>${im ? `<img src="${im}" alt="">` : '<span class="noimg"></span>'}<span class="nm">${esc(c.name)}</span><span class="pc">${rowPrice(c)}</span>${chev}</summary><div class="pbody">${cardHTML(c, true)}</div></details></li>`;
+      return `<li><details class="prod"><summary>${im ? `<img src="${im}" alt="" loading="lazy">` : '<span class="noimg"></span>'}<span class="nm">${esc(c.name)}</span><span class="pc">${rowPrice(c)}</span>${chev}</summary><div class="pbody">${cardHTML(c, true)}</div></details></li>`;
     }).join('');
     return `<details class="sup"${q || list.length === 1 ? ' open' : ''}><summary>${bc}<span class="who"><strong>${esc(g.name)}</strong><small>${g.none ? L('Products without a supplier name','منتجات بدون اسم مورّد') : `${L('Factory','المصنع')}: ${factories.length ? esc(factories.join(' · ')) : '—'} · ${L('Store ID','رقم المتجر')}: ${esc(storeIds.join(' · ')) || '—'}`}</small></span><span class="n">${g.items.length}</span>${chev}</summary><ul>${rows}</ul></details>`;
   }).join('');
