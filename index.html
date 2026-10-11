@@ -47,7 +47,7 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid v
 .uploads{display:flex;gap:12px}
 .upbtn{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--accent);border-radius:12px;background:var(--leaf);color:var(--accent);cursor:pointer;overflow:hidden;flex:none}
 .upbtn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
-.upbtn img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.upbtn img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
 .upbtn.has{border-style:solid}
 .upbtn.has::after{content:"";position:absolute;inset-inline-end:4px;bottom:4px;width:16px;height:16px;border-radius:50%;background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E") center/12px no-repeat;box-shadow:0 0 0 2px var(--surface)}
 .btns{display:flex;flex-wrap:wrap;gap:10px}
@@ -58,14 +58,14 @@ button.link{min-height:auto;padding:0;border:0;background:none;color:var(--accen
 
 /* Product card */
 .pcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 6px 24px -14px rgba(20,40,80,.3)}
-.pcard .img{aspect-ratio:4/3;width:50%;max-width:100%;margin:14px auto 0;border-radius:12px;overflow:hidden;background:var(--sunk);position:relative}
-.pcard .img img{width:100%;height:100%;object-fit:cover;display:block}
+.pcard .img{aspect-ratio:4/3;width:50%;max-width:100%;margin:14px auto 0;border-radius:12px;overflow:hidden;background:#fff;border:1px solid var(--line);position:relative}
+.pcard .img img{width:100%;height:100%;object-fit:contain;display:block}
 .imgnext{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;min-height:0;padding:0;border-radius:50%;border:0;background:rgba(255,255,255,.88);color:var(--fg);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .pcount{position:absolute;inset-inline-end:8px;bottom:8px;background:rgba(10,20,40,.65);color:#fff;font-family:var(--mono);font-size:.7rem;padding:2px 7px;border-radius:999px}
 .pbadge{position:absolute;inset-inline-start:4px;top:4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:1}
 .photostrip{display:flex;gap:8px;overflow-x:auto;padding-top:2px}
 .photostrip .ph{position:relative;width:52px;height:52px;flex:none;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
-.photostrip img{width:100%;height:100%;object-fit:cover}
+.photostrip img{width:100%;height:100%;object-fit:contain;background:#fff}
 .photostrip button{position:absolute;top:2px;inset-inline-end:2px;width:20px;height:20px;min-height:0;padding:0;border-radius:50%;border:0;background:rgba(10,20,40,.7);color:#fff;font-size:.85rem;line-height:1}
 .pcard .cat{position:absolute;left:12px;top:12px;background:var(--tag);color:#1d1503;font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
 .pcard .body{padding:14px 16px 16px;display:grid;gap:12px}
@@ -105,7 +105,7 @@ button.link{min-height:auto;padding:0;border:0;background:none;color:var(--accen
 .cardactions button{min-height:38px;font-size:.84rem;padding:0 12px;flex:1}
 .empty{color:var(--muted);text-align:center;padding:24px;border:1.5px dashed var(--line);border-radius:12px;margin:0}
 .bizbtn{display:flex;align-items:center;gap:10px;width:100%;min-height:auto;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);font-weight:600;font-size:.84rem;text-align:start}
-.bizbtn img{width:72px;height:44px;object-fit:cover;border-radius:5px;flex:none}
+.bizbtn img{width:72px;height:44px;object-fit:contain;background:#fff;border-radius:5px;flex:none}
 .viewer{position:fixed;inset:0;background:rgba(10,20,18,.88);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));z-index:10}
 .viewer img{max-width:100%;max-height:100%;border-radius:8px;background:#fff}
 .viewer button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));inset-inline-end:12px;min-height:40px;background:#fff;color:#16211f;border:0}
@@ -147,7 +147,7 @@ button.link{min-height:auto;padding:0;border:0;background:none;color:var(--accen
 .sup summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer}
 .sup summary::-webkit-details-marker{display:none}
 .sup summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.sup .bc{width:64px;height:40px;border-radius:6px;object-fit:cover;flex:none;background:var(--sunk);border:1px solid var(--line)}
+.sup .bc{width:64px;height:40px;border-radius:6px;object-fit:contain;flex:none;background:var(--sunk);border:1px solid var(--line)}
 .sup .bc.ph{display:flex;align-items:center;justify-content:center;color:var(--accent)}
 .sup .who{flex:1;min-width:0}
 .sup .who strong{display:block;font-size:1rem;overflow-wrap:anywhere}
@@ -158,7 +158,7 @@ button.link{min-height:auto;padding:0;border:0;background:none;color:var(--accen
 .sup ul{list-style:none;margin:0;padding:0 0 8px}
 .sup li button{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;text-align:start;font-weight:500}
 .sup li:last-child button{border-bottom:0}
-.sup li img,.sup li .noimg{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--sunk)}
+.sup li img,.sup li .noimg{width:44px;height:44px;border-radius:8px;object-fit:contain;flex:none;background:#fff;border:1px solid var(--line)}
 .sup li .nm{flex:1;min-width:0;overflow-wrap:anywhere}
 .sup li .pc{font-family:var(--mono);font-size:.84rem;color:var(--muted);white-space:nowrap}
 textarea{resize:vertical;min-height:84px;line-height:1.4}
@@ -205,7 +205,7 @@ input[aria-invalid="true"]{border-color:var(--danger);background:#fdf3f1}
 .prod>summary{list-style:none;display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 0;cursor:pointer}
 .prod>summary::-webkit-details-marker{display:none}
 .prod>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.prod>summary img,.prod>summary .noimg{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--sunk)}
+.prod>summary img,.prod>summary .noimg{width:44px;height:44px;border-radius:8px;object-fit:contain;flex:none;background:#fff;border:1px solid var(--line)}
 .prod .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
 .prod .pc{font-family:var(--mono);font-size:.84rem;color:var(--muted);white-space:nowrap}
 .prod[open] .chev{transform:rotate(90deg)}
@@ -307,7 +307,7 @@ input[aria-invalid="true"]{border-color:var(--danger);background:#fdf3f1}
 .cmprow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .cmphead{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cmphead>div{display:flex;gap:10px;align-items:center;min-width:0;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-.cmphead img,.cmphead .noimg{width:48px;height:48px;border-radius:8px;object-fit:cover;flex:none;background:var(--sunk)}
+.cmphead img,.cmphead .noimg{width:48px;height:48px;border-radius:8px;object-fit:contain;flex:none;background:#fff}
 .cmphead .who{min-width:0}
 .cmpchosen .tagab,.cmphead .tagab{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-size:.74rem;font-weight:700;margin-bottom:3px}
 .cmphead strong{display:block;font-size:.9rem;line-height:1.25;overflow-wrap:anywhere}
@@ -331,7 +331,7 @@ input[aria-invalid="true"]{border-color:var(--danger);background:#fdf3f1}
 .ctable.facts2 span{font-size:.84rem}
 .cmppick .slbl{font-size:.82rem;font-weight:600}
 .cmpchosen{display:flex;align-items:center;gap:10px;padding:8px;border:1.5px solid var(--accent);border-radius:12px;background:var(--leaf)}
-.cmpchosen img,.cmpchosen .noimg,.cmplist img,.cmplist .noimg{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;background:var(--sunk)}
+.cmpchosen img,.cmpchosen .noimg,.cmplist img,.cmplist .noimg{width:44px;height:44px;border-radius:8px;object-fit:contain;flex:none;background:#fff;border:1px solid var(--line)}
 .cmpchosen .who,.cmplist .who{flex:1;min-width:0}
 .cmpchosen strong,.cmplist strong{display:block;font-size:.92rem;font-weight:600;overflow-wrap:anywhere}
 .cmpchosen small,.cmplist small{display:block;font-size:.8rem;color:var(--muted);font-weight:400;overflow-wrap:anywhere}
@@ -1738,8 +1738,8 @@ async function renderShareImage(c, photoIdx){
     if (photo) {
       const pw = Math.round(IW * 0.5), ph = Math.round(IH * 0.5), px = Math.round((W - pw) / 2);
       if (draw) {
-        const s = Math.max(pw / photo.width, ph / photo.height), w = photo.width * s, h = photo.height * s;
-        ctx.save(); rrect(ctx, px, y, pw, ph, 18); ctx.clip(); ctx.drawImage(photo, px + (pw - w)/2, y + (ph - h)/2, w, h); ctx.restore();
+        const s = Math.min(pw / photo.width, ph / photo.height), w = photo.width * s, h = photo.height * s;
+        ctx.save(); rrect(ctx, px, y, pw, ph, 18); ctx.clip(); ctx.fillStyle = '#ffffff'; ctx.fillRect(px, y, pw, ph); ctx.drawImage(photo, px + (pw - w)/2, y + (ph - h)/2, w, h); ctx.restore();
       }
       y += ph + 36;
     }
