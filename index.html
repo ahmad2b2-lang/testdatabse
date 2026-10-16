@@ -2719,8 +2719,8 @@ async function renderRFQImage(c){
       y += 30;
     }
     // what we ask for
-    const ask = ['Please quote: unit price, MOQ, packing (pcs per carton, carton size and weight) and delivery time.',
-                 '请报价：单价、起订量、包装（每箱数量、外箱尺寸和重量）以及交货期'];
+    const ask = ['Please quote: unit price and MOQ.',
+                 '请报价：单价和起订量'];
     ctx.font = `500 28px ${B}`;
     const al = [...wrapLines(ctx, ask[0], CW - 48, 3), ...wrapChars(ctx, ask[1], CW - 48, 3)], ah = 30 + al.length * 40 + 24;
     if (draw) { ctx.fillStyle = '#e3eefa'; rrect(ctx, P, y, CW, ah, 16); ctx.fill(); al.forEach((l, k) => text(ctx, l, P + 24, y + 28 + k * 40, `500 28px ${B}`, FG)); }
