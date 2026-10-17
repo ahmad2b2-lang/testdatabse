@@ -84,6 +84,7 @@ button.link{min-height:auto;padding:0;border:0;background:none;color:var(--accen
 .prices small{display:block;font-family:var(--mono);font-size:.68rem;color:var(--muted);letter-spacing:.06em}
 .prices b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:1rem;overflow-wrap:anywhere}
 .prices .main{background:var(--sunk)}
+.prices.long b{font-size:.84rem;letter-spacing:-.02em;overflow-wrap:normal;white-space:nowrap}
 .meta{display:flex;justify-content:space-between;gap:10px;font-size:.84rem;color:var(--muted);flex-wrap:wrap}
 .meta b{color:var(--fg);font-family:var(--mono);font-weight:500}
 .urlrow{display:flex;gap:8px}
@@ -1404,7 +1405,7 @@ function cardHTML(c, actions){
         ${vs.length ? `<div class="vtable${priceStale(c) ? ' stale' : ''}">
           <div class="vhead"><span>${L('Variant','الخيار')}</span><span>RMB</span><span>USD</span><span class="main">SAR</span></div>
           ${vs.map((v, i) => `<div class="vrow"><span class="vn" dir="auto">${esc(variantName(v, i))}${(v.name || '').trim() && vcode(v) ? `<small dir="ltr">${esc(vcode(v))}</small>` : ''}</span><b>${fmt(v.rmb)}</b><b>${fmt(v.usd)}</b><b class="main">${fmt(v.sar)}</b></div>`).join('')}
-        </div>` : `<div class="prices${priceStale(c) ? ' stale' : ''}">
+        </div>` : `<div class="prices${priceStale(c) ? ' stale' : ''}${Math.max(fmt(pr.rmb).length, fmt(pr.usd).length, fmt(pr.sar).length) > 8 ? ' long' : ''}">
           <div><small>RMB${uom}</small><b>¥${fmt(pr.rmb)}</b></div>
           <div><small>USD${uom}</small><b>$${fmt(pr.usd)}</b></div>
           <div class="main"><small>SAR${uom}</small><b>${fmt(pr.sar)}</b></div>
