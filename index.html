@@ -1422,7 +1422,7 @@ function cardHTML(c, actions){
     ? `<button type="button" class="zoom" data-zoom="${c.id}" aria-label="${L('Enlarge photo','تكبير الصورة')}"><img src="${im[0]}" alt="${esc(pname(c))}" loading="lazy" decoding="async"></button>` + (im.length > 1 ? `<span class="pcount">1/${im.length}</span><button type="button" class="imgnext" data-next="${c.id}" aria-label="${L('Next photo','الصورة التالية')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>` : '')
     : `<span class="nophoto">${L('No product photo','لا توجد صورة للمنتج')}</span>`;
   const link = c.url ? linkHTML(c.url) : `<p class="muted-row">${L('Product link','رابط المنتج')}: —</p>`;
-  const biz = c.biz ? `<button type="button" class="bizbtn" data-view="${c.id}"><img src="${c.biz}" alt="" loading="lazy" decoding="async">${L('Supplier business card','بطاقة عمل المورّد')}</button>` : `<p class="muted-row">${L('Supplier business card','بطاقة عمل المورّد')}: —</p>`;
+  const bz = bizOf(c), biz = bz ? `<button type="button" class="bizbtn" data-view="${c.id}"><img src="${bz}" alt="" loading="lazy" decoding="async">${L('Supplier business card','بطاقة عمل المورّد')}</button>` : `<p class="muted-row">${L('Supplier business card','بطاقة عمل المورّد')}: —</p>`;
   return `<article class="pcard">
     <div class="img" data-card="${c.id || ''}" data-i="0">${imgBlock}</div>
     <div class="body">
@@ -1562,6 +1562,7 @@ function fillForm(c){
   setCur(c.cur || 'RMB');
   variantsData = variantsOf(c).map(v => ({name: v.name || '', code: vcode(v), cost: String(v.cost ?? '')})); renderVariantsUI();
   setImgs(imgsOf(c)); setBiz(c.biz);
+  if (!c.biz) { const card = supplierCard(c.supplier); if (card) { setBiz(card); bizAuto = true; } }
   $('dateAdded').textContent = addedOf(c) ? fmtDate(addedOf(c)) : '—';
 }
 
@@ -1648,6 +1649,8 @@ function supplierCard(name){
   const c = cards.find(x => !x.sample && x.biz && x.id !== editingId && supKey(x.supplier) === k);
   return c ? c.biz : '';
 }
+// A product's own business card, or else the newest card saved for the same supplier
+function bizOf(c){ if (!c) return ''; if (c.biz) return c.biz; const k = supKey(c.supplier); if (!k) return ''; const o = cards.find(x => !x.sample && x.biz && supKey(x.supplier) === k); return o ? o.biz : ''; }
 function applySupplier(){
   const p = suppliers[supKey($('supplier').value)], note = $('supNote');
   // Reuse the supplier's business card, unless one was added by hand for this product
@@ -1721,7 +1724,7 @@ async function onCardClick(e){
   if (b.dataset.calc) { openCalc(b.dataset.calc); return; }
   if (b.dataset.rfq) { shareRFQ(b.dataset.rfq, b); return; }
   if (b.dataset.tpl) { const t = cards.find(x => x.id === b.dataset.tpl); if (t) newFromTemplate(t); return; }
-  if (b.dataset.view) { const c = cards.find(x => x.id === b.dataset.view); if (c && c.biz) { $('viewerImg').src = c.biz; $('viewer').hidden = false; $('viewerClose').focus(); } return; }
+  if (b.dataset.view) { const c = cards.find(x => x.id === b.dataset.view), bz = bizOf(c); if (bz) { $('viewerImg').src = bz; $('viewer').hidden = false; $('viewerClose').focus(); } return; }
   const id = b.dataset.edit || b.dataset.copy || b.dataset.del;
   const c = cards.find(x => x.id === id); if (!c) return;
   if (b.dataset.edit) {
@@ -2723,7 +2726,7 @@ async function renderShareImage(c, photoIdx){
     [L('MOQ','الحد الأدنى للطلب'), c.moq ? c.moq + (c.uom && /^[\d.,\s]+$/.test(c.moq) ? ' ' + c.uom : '') : ''],
     [L('Factory location','موقع المصنع'), c.factory], [L('Store ID','رقم المتجر'), c.storeId], [L('Dimensions','الأبعاد'), c.dims], [L('Weight','الوزن'), c.weight],
     [L('Material','المادة'), c.material], [L('Date added','تاريخ الإضافة'), addedOf(c) ? fmtDate(addedOf(c)) : '']];
-  const biz = c.biz ? await loadImg(c.biz) : null;
+  const bz = bizOf(c), biz = bz ? await loadImg(bz) : null;
 
   // right-to-left text, anchored at its right edge
   // Positions are written for Arabic (anchored at the right edge); in English they are mirrored to the left edge
