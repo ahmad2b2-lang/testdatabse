@@ -422,6 +422,9 @@ input[aria-invalid="true"]{border-color:var(--danger);background:#fdf3f1}
 .stable th{font-size:.7rem;font-weight:600;color:var(--muted);text-align:start;padding:6px 10px;border-bottom:1px solid var(--line)}
 .stable td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 .stable .n{text-align:end;font-family:var(--mono);white-space:nowrap}
+@media (max-width:480px){.stable{font-size:.76rem}.stable th,.stable td{padding:6px 6px}.stable td:first-child{padding-inline-start:10px}.stable td:last-child,.stable th:last-child{padding-inline-end:10px}}
+.cbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cbtns button{min-height:50px}
+.sumtop{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .stable tfoot td{font-weight:700;border-bottom:0}
 .sumactions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sumactions button{min-height:44px;font-size:.88rem}
@@ -2153,7 +2156,7 @@ function renderCart(){
       <div class="r"><label for="cVat">${esc(L('Add 15% VAT', 'إضافة ضريبة القيمة المضافة 15%'))}</label><input id="cVat" type="checkbox" ${cart.vat ? 'checked' : ''}></div>
       <dl class="totals" id="cTotals"></dl>
     </div>
-    <button type="button" class="primary" id="cSummary" style="min-height:50px">${esc(L('Create order summary', 'إنشاء ملخص الطلب'))}</button>
+    <div class="cbtns"><button type="button" class="primary" id="cSummary">${esc(L('Order summary', 'ملخص الطلب'))}</button><button type="button" class="primary" id="cPdf">${esc(L('Export PDF', 'تصدير PDF'))}</button></div>
     ${savedOrdersBtn()}`;
   fillTotals(tt);
 }
@@ -2188,9 +2191,11 @@ function renderSummary(){
   const b = makeBill(), saved = bills.find(x => x.id === b.id);
   body.innerHTML = `
     <div class="field"><label for="sNote">${esc(L('Order name or note (optional)', 'اسم الطلب أو ملاحظة (اختياري)'))}</label><input id="sNote" dir="auto" autocomplete="off" value="${esc(cart.note || '')}" placeholder="${esc(L('e.g. customer, shop or trip', 'مثل: العميل أو المحل أو الرحلة'))}"></div>
+    <div class="sumtop"><button type="button" class="primary" data-spdf style="flex:1;min-height:46px">${esc(L('Export PDF', 'تصدير PDF'))}</button></div>
+    <p class="dtmsg" id="sMsgTop" hidden></p>
     ${billHTML(b)}
     <div class="sumactions">
-      <button type="button" class="primary" id="sPdf">${esc(L('Export PDF', 'تصدير PDF'))}</button>
+      <button type="button" class="primary" id="sPdf" data-spdf>${esc(L('Export PDF', 'تصدير PDF'))}</button>
       <button type="button" id="sSaveBill" class="adminonly">${esc(saved ? L('Saved ✓ (save again)', 'محفوظ ✓ (حفظ مجددًا)') : L('Save order', 'حفظ الطلب'))}</button>
       <button type="button" id="sShare">${esc(L('Share', 'مشاركة'))}</button>
       <button type="button" id="sCopy">${esc(L('Copy text', 'نسخ النص'))}</button>
@@ -2200,7 +2205,7 @@ function renderSummary(){
     <p class="dtmsg" id="sMsg" hidden></p>`;
 }
 function summaryText(){ return billText(makeBill()); }
-function sMsg(t, bad){ const el = $('sMsg'); if (!el) return; el.textContent = t; el.className = 'dtmsg' + (bad ? ' bad' : ''); el.hidden = !t; }
+function sMsg(t, bad){ for (const id of ['sMsg', 'sMsgTop']) { const el = $(id); if (!el) continue; el.textContent = t; el.className = 'dtmsg' + (bad ? ' bad' : ''); el.hidden = !t; } }
 async function copyText(t){
   try { await navigator.clipboard.writeText(t); return true; } catch(e) {}
   try { const a = document.createElement('textarea'); a.value = t; a.style.position = 'fixed'; a.style.opacity = '0'; document.body.appendChild(a); a.select(); const ok = document.execCommand('copy'); a.remove(); return ok; } catch(e) { return false; }
@@ -2233,6 +2238,7 @@ $('cartBody').addEventListener('click', e => {
   const qd = e.target.closest('[data-cqd]'); if (qd && it) { it.qty = Math.max(1, (Math.round(num(it.qty) || 1)) + +qd.dataset.cqd); cart.order = null; saveCart(); renderCart(); return; }
   if (e.target.closest('[data-crm]') && it) { cart.items.splice(+line.dataset.ci, 1); cart.order = null; saveCart(); renderCart(); return; }
   if (e.target.closest('#cSummary')) { cart.order = null; renderSummary(); showPage('summary'); }
+  if (e.target.closest('#cPdf')) { cart.order = null; renderSummary(); showPage('summary'); const pb = document.querySelector('#sumBody [data-spdf]'); if (pb) pb.click(); }
 });
 $('cartBody').addEventListener('change', e => {
   const line = e.target.closest('[data-ci]');
@@ -2250,7 +2256,8 @@ $('sumBody').addEventListener('click', async e => {
     try { if (navigator.share) { await navigator.share({title: orderMeta().no, text}); return; } } catch(err) { if (err && err.name === 'AbortError') return; }
     sMsg(await copyText(text) ? L('Sharing isn\'t available here, so the summary was copied instead.', 'المشاركة غير متاحة هنا، لذلك تم نسخ الملخص.') : L("Couldn't share here.", 'تعذّرت المشاركة هنا.'), false); return;
   }
-  if (e.target.closest('#sPdf')) { const b = makeBill(); if (saveBill(b)) e.target.closest('.sumactions').querySelector('#sSaveBill').textContent = L('Saved ✓ (save again)', 'محفوظ ✓ (حفظ مجددًا)'); exportBillPDF(b, e.target.closest('#sPdf'), (t, bad) => sMsg(window.APP_IS_GUEST ? t : t + ' ' + L('Also saved in Saved orders.', 'وحُفظ أيضًا في الطلبات المحفوظة.'), bad)); return; }
+  const spdf = e.target.closest('[data-spdf]');
+  if (spdf) { const b = makeBill(); if (saveBill(b)) $('sSaveBill').textContent = L('Saved ✓ (save again)', 'محفوظ ✓ (حفظ مجددًا)'); exportBillPDF(b, spdf, (t, bad) => sMsg(window.APP_IS_GUEST ? t : t + ' ' + L('Also saved in Saved orders.', 'وحُفظ أيضًا في الطلبات المحفوظة.'), bad)); return; }
   const sb = e.target.closest('#sSaveBill');
   if (sb) { if (saveBill(makeBill())) { sb.textContent = L('Saved ✓ (save again)', 'محفوظ ✓ (حفظ مجددًا)'); sMsg(L('Order saved. Find it under Saved orders.', 'تم حفظ الطلب. تجده في «الطلبات المحفوظة».'), false); } return; }
   const nb = e.target.closest('#sNew');
