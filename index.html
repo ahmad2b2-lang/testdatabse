@@ -1130,7 +1130,8 @@ if (typeof JSZip !== 'function') (function(){
     },
     // removes album photos from storage, except any a saved product now uses
     async remove(paths){
-      const used = new Set([...savedPaths.values()].flat()), del = paths.filter(p => p && !used.has(p));
+      const reg = cache['pcm.suppliers.v1'] && typeof cache['pcm.suppliers.v1'] === 'object' ? Object.values(cache['pcm.suppliers.v1']).map(x => x && typeof x.biz === 'string' && x.biz.startsWith('sb:') ? x.biz.slice(3) : '') : [];
+      const used = new Set([...savedPaths.values()].flat().concat(reg)), del = paths.filter(p => p && !used.has(p));   // keep photos used by products or saved supplier cards
       if (!del.length || !sb) return;
       const { error } = await sb.storage.from(BUCKET).remove(del);
       if (error) throw error;
@@ -1169,7 +1170,10 @@ if (typeof JSZip !== 'function') (function(){
     const byId = {};
     for (const r of cardRows) byId[r.id] = Object.assign({}, r.data, { id: r.id });
     // turn saved photo paths into viewable (signed) links
-    const paths = [...new Set(Object.values(byId).flatMap(c => refsOf(c)).filter(s => s.startsWith('sb:')).map(s => s.slice(3)))];
+    // business cards of suppliers saved without products (pcm.suppliers.v1 → {biz: 'sb:…'})
+    const supReg = cache['pcm.suppliers.v1'] && typeof cache['pcm.suppliers.v1'] === 'object' ? cache['pcm.suppliers.v1'] : {};
+    const supPaths = Object.values(supReg).map(x => x && x.biz).filter(s => typeof s === 'string' && s.startsWith('sb:')).map(s => s.slice(3));
+    const paths = [...new Set(Object.values(byId).flatMap(c => refsOf(c)).filter(s => s.startsWith('sb:')).map(s => s.slice(3)).concat(supPaths))];
     // A photo link is reused until it has less than a day left, so the browser's saved copy stays valid
     // (a brand-new link each visit would make the phone download every photo again).
     const URLS_KEY = 'pcm.photolinks.v1', now = Date.now();
@@ -1184,6 +1188,8 @@ if (typeof JSZip !== 'function') (function(){
     }
     lsTry(() => localStorage.setItem(URLS_KEY, JSON.stringify(fresh)));
     const view = s => typeof s === 'string' && s.startsWith('sb:') ? (signed.get(s.slice(3)) || '') : s;
+    window.APP_SUPCARDS = {};
+    for (const p of supPaths) { const u = signed.get(p); if (u) { urlToPath.set(u, p); window.APP_SUPCARDS[p] = u; } }
     for (const c of Object.values(byId)) {
       const before = refsOf(c).filter(s => s.startsWith('sb:')).map(s => s.slice(3));
       if (Array.isArray(c.imgs)) c.imgs = c.imgs.map(view).filter(Boolean);
@@ -1742,10 +1748,15 @@ let supFilled = false;
 function supplierCard(name){
   const k = supKey(name); if (!k) return '';
   const c = cards.find(x => !x.sample && x.biz && x.id !== editingId && supKey(x.supplier) === k);
-  return c ? c.biz : '';
+  return c ? c.biz : regCard(k);
+}
+function regCard(k){   // a supplier saved without products can still carry its business card
+  const b = suppliers[k] && suppliers[k].biz;
+  if (typeof b !== 'string' || !b) return '';
+  return b.startsWith('sb:') ? (window.APP_SUPCARDS || {})[b.slice(3)] || '' : b;
 }
 // A product's own business card, or else the newest card saved for the same supplier
-function bizOf(c){ if (!c) return ''; if (c.biz) return c.biz; const k = supKey(c.supplier); if (!k) return ''; const o = cards.find(x => !x.sample && x.biz && supKey(x.supplier) === k); return o ? o.biz : ''; }
+function bizOf(c){ if (!c) return ''; if (c.biz) return c.biz; const k = supKey(c.supplier); if (!k) return ''; const o = cards.find(x => !x.sample && x.biz && supKey(x.supplier) === k); return o ? o.biz : regCard(k); }
 function applySupplier(){
   const p = suppliers[supKey($('supplier').value)], note = $('supNote');
   // Reuse the supplier's business card, unless one was added by hand for this product
@@ -1790,7 +1801,7 @@ $('form').addEventListener('submit', e => {
   else { cards = cards.filter(c => !c.sample); const now = new Date().toISOString(); cards.unshift({...f, id:Date.now().toString(36), added: now, updated: now, priceUpdated: now}); }
   const sk = supKey(f.supplier);
   if (sk) {
-    suppliers[sk] = {name: f.supplier, factory: f.factory, storeId: f.storeId};
+    suppliers[sk] = {...(suppliers[sk] || {}), name: f.supplier, factory: f.factory, storeId: f.storeId};
     cards.forEach(c => { if (supKey(c.supplier) === sk && (c.factory !== f.factory || c.storeId !== f.storeId)) { if (!c.priceUpdated) c.priceUpdated = c.updated || addedOf(c) || ''; c.factory = f.factory; c.storeId = f.storeId; c.updated = new Date().toISOString(); } });
     store.set(SKEY, suppliers); renderSupList();
   }
