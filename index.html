@@ -1038,6 +1038,13 @@ if (typeof JSZip !== 'function') (function(){
     try {
       for (const k of keys) {
         if (k !== CARDS) {
+          // Keys that Claude may also change (e.g. marking an album done): merge with the saved copy instead of overwriting it
+          const merge = (window.APP_MERGE || {})[k];
+          if (merge) {
+            const { data, error: rerr } = await sb.from('app_settings').select('value').eq('key', k).maybeSingle();
+            if (rerr) throw rerr;
+            if (data && data.value !== undefined) { cache[k] = merge(cache[k], data.value); if (window.APP_ON_MERGED) window.APP_ON_MERGED(k, cache[k]); }
+          }
           const { error } = await sb.from('app_settings').upsert({ key: k, value: cache[k] === undefined ? null : cache[k], updated_at: new Date().toISOString() });
           if (error) throw error;
           continue;
@@ -3521,6 +3528,22 @@ let alQueue = Promise.resolve(), alStale = false;
 const albumById = id => albums.find(a => a && a.id === id);
 const alPhotos = a => Array.isArray(a.photos) ? a.photos : (a.photos = []);
 function saveAlbums(){ store.set(ALBUMS_KEY, albums); updateAlbumsTile(); }
+// Claude marks albums as done in the saved copy; when this phone saves its list, keep whichever copy of each album changed last
+const alDeleted = new Set();
+window.APP_MERGE = Object.assign(window.APP_MERGE || {}, {[ALBUMS_KEY]: (local, saved) => {
+  local = Array.isArray(local) ? local.filter(Boolean) : []; saved = Array.isArray(saved) ? saved.filter(Boolean) : [];
+  const stamp = a => String(a.updated || a.doneAt || a.created || '');
+  const byId = new Map(saved.map(a => [a.id, a]));
+  const out = local.map(a => { const o = byId.get(a.id); return o && stamp(o) > stamp(a) ? o : a; });
+  const have = new Set(out.map(a => a.id));
+  for (const a of saved) if (!have.has(a.id) && !alDeleted.has(a.id)) out.push(a);
+  return out;
+}});
+window.APP_ON_MERGED = (k, v) => {
+  if (k !== ALBUMS_KEY) return;
+  albums = v;
+  if (!document.getElementById('albumsPage').hidden && !document.activeElement.closest('#albumsBody')) renderAlbums(); else updateAlbumsTile();
+};
 function updateAlbumsTile(){
   const t = $('albumsTileN'); if (!t) return;
   const n = albums.filter(a => a && a.status !== 'done').length;
@@ -3667,7 +3690,7 @@ async function alExport(a, btn){
     if (!r) r = await saveBlob(fname, blob);
     const [t, bad] = saveResultMsg(r, L('Album file ready. Attach it in your chat with Claude.', 'ملف الألبوم جاهز. أرفقه في محادثتك مع Claude.'));
     msg(t, bad);
-    if (!bad && r !== 'declined') { a.sent = now; saveAlbums(); }
+    if (!bad && r !== 'declined') { a.sent = now; a.updated = now; saveAlbums(); }
   } catch(e) {
     msg(L("Couldn't prepare the album file. Check your connection and try again.", 'تعذّر تجهيز ملف الألبوم. تحقّق من الاتصال وحاول مرة أخرى.'), true);
   } finally { btn.disabled = false; btn.textContent = label; }
@@ -3728,7 +3751,7 @@ $('albumsBody').addEventListener('click', async e => {
   if (del) {
     if (!del.dataset.confirm) { del.dataset.confirm = '1'; del.textContent = L('Tap again to delete', 'اضغط مرة أخرى للحذف'); setTimeout(() => { if (del.isConnected) { delete del.dataset.confirm; del.textContent = L('Delete album', 'حذف الألبوم'); } }, 3000); return; }
     const paths = alPhotos(a).map(p => p.p);
-    albums = albums.filter(x => x !== a); alPending.delete(a.id); albumOpen = null; saveAlbums(); renderAlbums();
+    albums = albums.filter(x => x !== a); alDeleted.add(a.id); alPending.delete(a.id); albumOpen = null; saveAlbums(); renderAlbums();
     toast(L('Album deleted', 'تم حذف الألبوم'));
     if (window.APP_PHOTOS) APP_PHOTOS.remove(paths).catch(() => {});   // photos already used by products are kept
   }
