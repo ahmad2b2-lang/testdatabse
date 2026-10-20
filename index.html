@@ -399,9 +399,9 @@ input[aria-invalid="true"]{border-color:var(--danger);background:#fdf3f1}
 .cline .ct{display:grid;gap:4px;min-width:0}
 .cline strong{font-size:.9rem;overflow-wrap:anywhere}
 .cline small{font-size:.76rem;color:var(--muted);overflow-wrap:anywhere}
-.cline .crow2{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px}
-.cline .crow2 .lt{text-align:end}
-.cline .qty{width:108px}
+.cline .crow2{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.cline .crow2 .lt{flex:1 0 auto;text-align:end;white-space:nowrap}
+.cline .qty{width:136px}
 .cline .lt{font-family:var(--mono);font-weight:600}
 .rm{min-height:30px;padding:0 10px;font-size:.78rem;color:var(--danger);border-color:var(--line)}
 .copts{display:grid;gap:10px}
@@ -1354,21 +1354,30 @@ const BIZ_PH = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg
 $('rUSD').value = rates.usd; $('rSAR').value = rates.sar;
 
 const num = v => { const n = parseFloat(String(v).replace(/,/g,'')); return isFinite(n) ? n : null; };
-const fmt = v => { const n = num(v); return n === null ? '—' : n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+// Prices under 1 (e.g. $0.1407 per bag) keep 4 decimals, so big quantities aren't thrown off by rounding.
+const DP = n => { const a = Math.abs(n); return a && a < 1 ? 4 : 2; };
+const fixP = n => n.toFixed(DP(n));
+const fmtN = n => n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: DP(n)});
+const qn = n => (+n || 0).toLocaleString('en-US');   // quantities with thousands separators: 1,000,000
+const fmt = v => { const n = num(v); return n === null ? '—' : fmtN(n); };
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-function convertAll(cost, cur){
+function convertRaw(cost, cur){   // exact numbers, no rounding
   const v = num(cost), ru = num($('rUSD').value), rs = num($('rSAR').value);
-  if (v === null || !ru || !rs) return {rmb:'', usd:'', sar:''};
+  if (v === null || !ru || !rs) return null;
   const usd = cur === 'USD' ? v : v / ru;
-  return {rmb:(cur === 'USD' ? v * ru : v).toFixed(2), usd:usd.toFixed(2), sar:(usd * rs).toFixed(2)};
+  return {rmb: cur === 'USD' ? v * ru : v, usd, sar: usd * rs};
+}
+function convertAll(cost, cur){
+  const r = convertRaw(cost, cur);
+  return r ? {rmb: fixP(r.rmb), usd: fixP(r.usd), sar: fixP(r.sar)} : {rmb:'', usd:'', sar:''};
 }
 function pricesOf(c){
   if (c.rmb !== undefined) return {rmb:c.rmb, usd:c.usd, sar:c.sar, cur:c.cur || 'RMB'};
   return {rmb:c.cost, usd:c.usd ?? toUSD(c.cost), sar:c.sar ?? toSAR(c.cost), cur:'RMB'};
 }
-function toUSD(rmb){ const r = num(rmb), ru = num($('rUSD').value); return r === null || !ru ? '' : (r/ru).toFixed(2); }
-function toSAR(rmb){ const u = num(toUSD(rmb)), rs = num($('rSAR').value); return u === null || !rs ? '' : (u*rs).toFixed(2); }
+function toUSD(rmb){ const r = num(rmb), ru = num($('rUSD').value); return r === null || !ru ? '' : fixP(r/ru); }
+function toSAR(rmb){ const r = num(rmb), ru = num($('rUSD').value), rs = num($('rSAR').value); return r === null || !ru || !rs ? '' : fixP(r/ru*rs); }
 
 // ---- Price variants: a product can have up to 10 prices, e.g. for sizes or colours ----
 const MAX_VARIANTS = 10;
@@ -1901,7 +1910,7 @@ $('qrPick').addEventListener('change', onQrFile);
 
 // Profit calculator (SAR); selling price is entered including 15% VAT
 const VAT = 0.15;
-const sar = v => { const n = (v < 0 ? '-' : '') + Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return L('SAR ' + n, n + ' ر.س'); };
+const sar = v => { const n = (v < 0 ? '-' : '') + fmtN(Math.abs(v)); return L('SAR ' + n, n + ' ر.س'); };
 function fillCalcProducts(sel){
   const o = $('cProduct');
   o.innerHTML = `<option value="">${L('Enter cost manually','إدخال التكلفة يدويًا')}</option>` + cards.filter(c => !c.sample || cards.length === 1).map(c => `<option value="${c.id}">${esc(pname(c))}</option>`).join('');
@@ -1965,7 +1974,7 @@ const CMP_KEY = {SAR: 'sar', USD: 'usd', RMB: 'rmb'};
 function cmpPrices(c){
   // unit cost(s) converted with the app's current exchange rates, so both products use the same rates
   const k = CMP_KEY[cmpCur], cur = c.cur === 'USD' ? 'USD' : 'RMB', vs = variantsOf(c);
-  const val = cost => num(convertAll(cost, cur)[k]);
+  const val = cost => { const r = convertRaw(cost, cur); return r ? r[k] : null; };
   if (vs.length) return vs.map((v, i) => ({name: variantName(v, i), key: (v.name || '').trim() ? (v.name || '').trim().toLowerCase().replace(/\s+/g, ' ') : '#' + i, val: val(v.cost)}));
   return [{name: null, key: null, val: val(c.cost !== undefined && c.cost !== '' ? c.cost : pricesOf(c).rmb)}];
 }
@@ -2156,11 +2165,11 @@ const shopList = () => cards.filter(c => !c.sample);
 function curOf(c){ return c.cur === 'USD' ? 'USD' : 'RMB'; }
 function unitPrice(c, vi){
   const vs = variantsOf(c), cost = vs.length ? (vs[vi] || vs[0]).cost : (c.cost !== undefined && c.cost !== '' ? c.cost : pricesOf(c).rmb);
-  return num(convertAll(cost, curOf(c))[CMP_KEY[cart.cur]]);
+  const r = convertRaw(cost, curOf(c)); return r ? r[CMP_KEY[cart.cur]] : null;
 }
 function money(v){
   if (v === null || v === undefined || isNaN(v)) return '—';
-  const n = (v < 0 ? '-' : '') + Math.abs(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const n = (v < 0 ? '-' : '') + fmtN(Math.abs(v));
   return cart.cur === 'USD' ? '$' + n : cart.cur === 'RMB' ? '¥' + n : L('SAR ' + n, n + ' ر.س');
 }
 function cartLines(){
@@ -2254,7 +2263,7 @@ function addToCart(tile){
   setTimeout(() => { btn.classList.remove('done'); btn.textContent = L('Add to cart', 'أضف إلى السلة'); }, 1200);
   const bar = $('cartBar'); if (bar) { bar.classList.remove('pulse'); void bar.offsetWidth; bar.classList.add('pulse'); }
 }
-function stepQty(input, d){ input.value = Math.max(1, (Math.round(num(input.value) || 1)) + d); }
+function stepQty(input, d){ input.value = qn(Math.max(1, (Math.round(num(input.value) || 1)) + d)); }
 function curSeg(){ return `<div class="seg" role="group" aria-label="${esc(L('Currency', 'العملة'))}">${['SAR', 'USD', 'RMB'].map(x => `<button type="button" data-ccur="${x}" aria-pressed="${x === cart.cur}">${x}</button>`).join('')}</div>`; }
 function renderCart(){
   const lines = cartLines(), tt = cartTotals(lines), body = $('cartBody');
@@ -2268,7 +2277,7 @@ function renderCart(){
         <div class="ct"><strong dir="auto">${esc(pname(l.c))}</strong><small dir="auto">${esc([l.variant, (l.c.supplier || '').trim()].filter(Boolean).join(' · '))}</small>
         <small>${l.adjSpec ? `<span class="was">${money(l.unit0)}</span> ` : ''}${money(l.unit)}${l.c.uom ? ' / ' + esc(l.c.uom) : ''}</small>
         ${l.adjSpec ? `<small class="adjchip${l.adjSpec.dir === 'extra' ? ' extra' : ''}" dir="auto">${esc(adjLabel(l.adjSpec))} (${esc(moneyS(l.adj, cart.cur))})</small>` : ''}
-        <div class="crow2"><div class="qty"><button type="button" data-cqd="-1" aria-label="-">−</button><input data-cq inputmode="numeric" value="${l.qty}" aria-label="${esc(L('Quantity', 'الكمية'))}"><button type="button" data-cqd="1" aria-label="+">+</button></div>
+        <div class="crow2"><div class="qty"><button type="button" data-cqd="-1" aria-label="-">−</button><input data-cq inputmode="numeric" value="${qn(l.qty)}" aria-label="${esc(L('Quantity', 'الكمية'))}"><button type="button" data-cqd="1" aria-label="+">+</button></div>
         <span class="lt">${money(l.total)}</span><button type="button" class="rm" data-crm>${esc(L('Remove', 'حذف'))}</button></div>
         ${cartAdjOpen === l.i ? adjEditor(l.adjSpec, 'line') : `<button type="button" class="adjbtn" data-cadj>${esc(l.adjSpec ? L('Change discount / extra cost', 'تعديل الخصم / التكلفة الإضافية') : L('+ Discount / extra cost', '+ خصم / تكلفة إضافية'))}</button>`}</div></div>`;
     }).join('')}</div>
@@ -2289,7 +2298,7 @@ function adjEditor(a, scope){
   const types = scope === 'order' ? [['pct', L('% of the order', '% من الطلب')], ['line', L('Amount', 'مبلغ')]]
     : [['pct', L('% of the price', '% من السعر')], ['unit', L('Amount per piece', 'مبلغ للقطعة')], ['line', L('Amount for this line', 'مبلغ لهذا البند')]];
   const type = types.some(t => t[0] === a.type) ? a.type : 'pct';
-  const val = a.type === 'pct' || !a.val ? a.val : String(+convMoney(num(a.val) || 0, a.cur || cart.cur, cart.cur).toFixed(2));
+  const val = a.type === 'pct' || !a.val ? a.val : String(+fixP(convMoney(num(a.val) || 0, a.cur || cart.cur, cart.cur)));
   return `<div class="adjed" data-adjed="${scope}">
     <div class="seg" role="group" aria-label="${esc(L('Type', 'النوع'))}"><button type="button" data-adir="disc" aria-pressed="${a.dir !== 'extra'}">${esc(L('Discount', 'خصم'))}</button><button type="button" data-adir="extra" aria-pressed="${a.dir === 'extra'}">${esc(L('Extra cost', 'تكلفة إضافية'))}</button></div>
     <div class="adjrow"><select data-atype aria-label="${esc(L('How', 'الطريقة'))}">${types.map(([k, t]) => `<option value="${k}"${k === type ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
@@ -2316,7 +2325,7 @@ function adjRowsHTML(tt, oadjSpec, cur){
   return adjRows(tt, oadjSpec).map(([t, v, k]) => `<div class="${k}"><dt dir="auto">${esc(t)}</dt><dd>${esc(moneyS(v, cur))}</dd></div>`).join('');
 }
 function totalsHTML(tt){
-  return `<div><dt>${esc(L(`Subtotal (${tt.count} pcs)`, `المجموع الفرعي (${tt.count} قطعة)`))}</dt><dd>${money(tt.sub)}</dd></div>
+  return `<div><dt>${esc(L(`Subtotal (${qn(tt.count)} pcs)`, `المجموع الفرعي (${qn(tt.count)} قطعة)`))}</dt><dd>${money(tt.sub)}</dd></div>
     ${adjRowsHTML(tt, cart.oadj, cart.cur)}
     ${tt.pct ? `<div><dt>${esc(L(`Shipping & extras (${tt.pct}%)`, `الشحن والمصاريف (${tt.pct}%)`))}</dt><dd>${money(tt.extra)}</dd></div>` : ''}
     ${cart.vat ? `<div><dt>${esc(L('VAT (15%)', 'ضريبة القيمة المضافة (15%)'))}</dt><dd>${money(tt.vat)}</dd></div>` : ''}
@@ -2443,7 +2452,7 @@ let bills = Array.isArray(store.get(BILLS_KEY, null)) ? store.get(BILLS_KEY, nul
 let billOpen = null;   // id of the saved bill being viewed
 function moneyIn(v, cur){
   if (v === null || v === undefined || isNaN(v)) return '—';
-  const n = (v < 0 ? '-' : '') + Math.abs(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const n = (v < 0 ? '-' : '') + fmtN(Math.abs(v));
   return cur === 'USD' ? '$' + n : cur === 'RMB' ? '¥' + n : L('SAR ' + n, n + ' ر.س');
 }
 function makeBill(){
@@ -2463,7 +2472,7 @@ function billGroups(b){
 }
 function billTotalsHTML(b){
   const m = v => moneyIn(v, b.cur);
-  return `<div><dt>${esc(L(`Subtotal (${b.tt.count} pcs)`, `المجموع الفرعي (${b.tt.count} قطعة)`))}</dt><dd>${m(b.tt.sub)}</dd></div>
+  return `<div><dt>${esc(L(`Subtotal (${qn(b.tt.count)} pcs)`, `المجموع الفرعي (${qn(b.tt.count)} قطعة)`))}</dt><dd>${m(b.tt.sub)}</dd></div>
     ${adjRowsHTML(b.tt, b.oadjSpec, b.cur)}
     ${b.pct ? `<div><dt>${esc(L(`Shipping & extras (${b.pct}%)`, `الشحن والمصاريف (${b.pct}%)`))}</dt><dd>${m(b.tt.extra)}</dd></div>` : ''}
     ${b.vat ? `<div><dt>${esc(L('VAT (15%)', 'ضريبة القيمة المضافة (15%)'))}</dt><dd>${m(b.tt.vat)}</dd></div>` : ''}
@@ -2474,7 +2483,7 @@ function billHTML(b){
   return `<div class="sumhead"><h2>${esc(L('Order summary', 'ملخص الطلب'))}</h2><p>${esc(b.no)} · ${esc(fmtDate(b.date))}</p>${b.note ? `<p class="bnote" dir="auto">${esc(b.note)}</p>` : ''}</div>
     ${billGroups(b).map(g => `<section class="sgroup"><h3><bdi dir="auto">${esc(g.name)}</bdi>${g.store ? `<span>${esc(g.store)}</span>` : ''}</h3>
       <div style="overflow-x:auto"><table class="stable"><thead><tr><th>${esc(L('Product', 'المنتج'))}</th><th class="n">${esc(L('Qty', 'الكمية'))}</th><th class="n">${esc(L('Unit price', 'سعر الوحدة'))}</th><th class="n">${esc(L('Total', 'الإجمالي'))}</th></tr></thead>
-      <tbody>${g.lines.map(l => `<tr><td dir="auto">${esc(billName(l))}${l.variant ? `<br><small style="color:var(--muted)">${esc(l.variant)}</small>` : ''}${l.adjSpec ? `<small class="adjnote${l.adjSpec.dir === 'extra' ? ' extra' : ''}" dir="auto">${esc(adjLabel(l.adjSpec))} (${esc(moneyS(l.adj, b.cur))})</small>` : ''}</td><td class="n"><bdi dir="ltr">${l.qty}${l.uom ? ' ' + esc(l.uom) : ''}</bdi></td><td class="n">${l.adjSpec ? `<span class="was">${m(l.unit0)}</span><br>` : ''}${m(l.unit)}</td><td class="n">${m(l.total)}</td></tr>`).join('')}</tbody>
+      <tbody>${g.lines.map(l => `<tr><td dir="auto">${esc(billName(l))}${l.variant ? `<br><small style="color:var(--muted)">${esc(l.variant)}</small>` : ''}${l.adjSpec ? `<small class="adjnote${l.adjSpec.dir === 'extra' ? ' extra' : ''}" dir="auto">${esc(adjLabel(l.adjSpec))} (${esc(moneyS(l.adj, b.cur))})</small>` : ''}</td><td class="n"><bdi dir="ltr">${qn(l.qty)}</bdi>${l.uom ? `<br><small style="color:var(--muted)">${esc(l.uom)}</small>` : ''}</td><td class="n">${l.adjSpec ? `<span class="was">${m(l.unit0)}</span><br>` : ''}${m(l.unit)}</td><td class="n">${m(l.total)}</td></tr>`).join('')}</tbody>
       <tfoot><tr><td colspan="3">${esc(L('Supplier subtotal', 'إجمالي المورّد'))}</td><td class="n">${m(g.lines.reduce((t, l) => t + (l.total || 0), 0))}</td></tr></tfoot></table></div></section>`).join('')}
     <div class="panel"><dl class="totals">${billTotalsHTML(b)}</dl>
       <p class="hint">${esc(L(`Prices are supplier costs converted at 1 USD = ${b.rates.usd} RMB = ${b.rates.sar} SAR.`, `الأسعار هي تكلفة المورّد محوّلة بسعر 1 دولار = ${b.rates.usd} يوان = ${b.rates.sar} ريال.`))}</p></div>`;
@@ -2485,7 +2494,7 @@ function billText(b){
   out.push('');
   for (const g of billGroups(b)) {
     out.push(`■ ${g.name}${g.store ? ' (' + g.store + ')' : ''}`);
-    for (const l of g.lines) out.push(`- ${billName(l)}${l.variant ? ' [' + l.variant + ']' : ''}: ${l.qty} × ${m(l.unit)} = ${m(l.total)}${l.adjSpec ? ` (${adjLabel(l.adjSpec)}: ${moneyS(l.adj, b.cur)})` : ''}`);
+    for (const l of g.lines) out.push(`- ${billName(l)}${l.variant ? ' [' + l.variant + ']' : ''}: ${qn(l.qty)} × ${m(l.unit)} = ${m(l.total)}${l.adjSpec ? ` (${adjLabel(l.adjSpec)}: ${moneyS(l.adj, b.cur)})` : ''}`);
     out.push('');
   }
   out.push(`${L('Subtotal', 'المجموع الفرعي')}: ${m(b.tt.sub)}`);
@@ -2569,7 +2578,7 @@ async function renderBillPages(b){
         r.ls.forEach((t, k) => txt(ctx, t, nameX, y + 14 + k * 32, `600 25px ${B}`, FG));
         if (l.variant) txt(ctx, l.variant, nameX, y + 14 + r.ls.length * 32 + 2, `500 21px ${B}`, MUT, nameW);
         r.as.forEach((t, k) => txt(ctx, t, nameX, y + 14 + r.ls.length * 32 + (l.variant ? 32 : 2) + k * 27, `600 20px ${B}`, l.adjSpec.dir === 'extra' ? '#9a4511' : '#1b6e38'));
-        txtEnd(ctx, `${l.qty}${l.uom ? ' ' + l.uom : ''}`, cQty, y + 16, `500 23px ${MO}`, FG);
+        txtEnd(ctx, `${qn(l.qty)}${l.uom ? ' ' + l.uom : ''}`, cQty, y + 16, `500 23px ${MO}`, FG);
         txtEnd(ctx, m(l.unit), cUnit, y + 16, `500 23px ${MO}`, FG); txtEnd(ctx, m(l.total), cTot - 14, y + 16, `600 23px ${MO}`, FG);
         ctx.strokeStyle = LINE; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(M, y + r.h); ctx.lineTo(W - M, y + r.h); ctx.stroke();
       }
@@ -2578,7 +2587,7 @@ async function renderBillPages(b){
         const bw = 560, x0 = W - M - bw; let ty = y + 30;
         const row = (lab, val, big) => { txt(ctx, lab, x0 + 20, ty, `${big ? 700 : 500} ${big ? 28 : 23}px ${B}`, big ? FG : MUT); txtEnd(ctx, val, W - M - 20, ty, `${big ? 700 : 500} ${big ? 30 : 23}px ${MO}`, big ? ACC : FG); ty += 52; };
         ctx.fillStyle = SOFT; rrect(ctx, rtl ? M : x0, y + 14, bw, r.h - 40, 14); ctx.fill();
-        row(L(`Subtotal (${b.tt.count} pcs)`, `المجموع الفرعي (${b.tt.count} قطعة)`), m(b.tt.sub));
+        row(L(`Subtotal (${qn(b.tt.count)} pcs)`, `المجموع الفرعي (${qn(b.tt.count)} قطعة)`), m(b.tt.sub));
         for (const [t, v] of adjRows(b.tt, b.oadjSpec)) row(t, moneyS(v, b.cur));
         if (b.pct) row(L(`Shipping & extras (${b.pct}%)`, `الشحن والمصاريف (${b.pct}%)`), m(b.tt.extra));
         if (b.vat) row(L('VAT (15%)', 'ضريبة القيمة المضافة (15%)'), m(b.tt.vat));
@@ -2623,7 +2632,7 @@ function renderBills(){
     return `<li><button type="button" data-bill="${esc(x.id)}"><span class="bl1"><b class="mono">${esc(x.no)}</b><span>${esc(fmtDate(x.date))}</span></span>
       ${x.note ? `<span class="bl2" dir="auto">${esc(x.note)}</span>` : ''}
       <span class="bl3" dir="auto">${esc(sups.slice(0, 3).join(' · '))}${sups.length > 3 ? ' …' : ''}</span>
-      <span class="bl1"><span>${esc(L(`${x.lines.length} ${x.lines.length === 1 ? 'item' : 'items'} · ${x.tt.count} pcs`, `${x.lines.length} صنف · ${x.tt.count} قطعة`))}</span><b class="mono">${moneyIn(x.tt.final, x.cur)}</b></span></button></li>`;
+      <span class="bl1"><span>${esc(L(`${x.lines.length} ${x.lines.length === 1 ? 'item' : 'items'} · ${qn(x.tt.count)} pcs`, `${x.lines.length} صنف · ${qn(x.tt.count)} قطعة`))}</span><b class="mono">${moneyIn(x.tt.final, x.cur)}</b></span></button></li>`;
   }).join('')}</ul>`;
 }
 function bMsg(t, bad){ const el = $('bMsg'); if (!el) return; el.textContent = t; el.className = 'dtmsg' + (bad ? ' bad' : ''); el.hidden = !t; }
