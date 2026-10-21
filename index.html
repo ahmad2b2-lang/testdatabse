@@ -476,6 +476,15 @@ html.guest .adminonly{display:none!important}
 .alph .alup{margin:0;padding:8px;font-size:.78rem;color:var(--muted);text-align:center}
 .alph .alup.bad{color:var(--danger);font-weight:600}
 .alph.pend .im img{opacity:.55}
+.alcost{display:grid;gap:6px;padding:6px 6px 0}
+.alcost .seg{display:flex;justify-self:stretch}
+.alcost .seg button{flex:1;min-height:30px;padding:0 6px;font-size:.76rem}
+.alcost .pair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.alcost .money input{margin:0;width:100%;min-height:36px;font-size:.84rem;padding:4px 6px;padding-inline-start:22px}
+.alcost .money span{inset-inline-start:7px;font-size:.8rem}
+.alcost .alsar{display:grid;align-content:center;min-height:36px;padding:2px 6px;border-radius:8px;background:var(--leaf);color:var(--accent);overflow:hidden}
+.alcost .alsar small{font-size:.66rem;font-weight:600;color:var(--muted);line-height:1.1}
+.alcost .alsar b{font-family:var(--mono);font-size:.84rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .alstatus{margin:0;padding:8px 10px;border-radius:10px;background:var(--leaf);color:var(--accent);font-weight:600;font-size:.88rem;overflow-wrap:anywhere}
 /* Travel expenses */
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -3561,6 +3570,19 @@ function alSign(paths){
 function alMsg(t, bad, id){ const el = $(id || 'alMsg'); if (!el) return; el.textContent = t || ''; el.className = 'dtmsg' + (bad ? ' bad' : ''); el.hidden = !t; }
 const alImg = p => `<img data-alp="${esc(p)}" alt="" loading="lazy" decoding="async"${alSrc(p) ? ` src="${esc(alSrc(p))}"` : ''}>`;
 const alCount = n => L(`${n} ${n === 1 ? 'photo' : 'photos'}`, `عدد الصور: ${n}`);
+// Cost of the product in a photo, entered in RMB or USD and shown in SAR at the app's exchange rates
+const alCur = (a, p) => (p && p.cur) || a.cur || (store.get(CKEY, 'RMB') === 'USD' ? 'USD' : 'RMB');
+const alSar = (cost, cur) => { const r = convertRaw(cost, cur); return r ? fmtN(r.sar) : '—'; };
+function alCostBox(a, p, i){
+  const cur = alCur(a, p);
+  return `<div class="alcost">
+    <div class="seg" role="group" aria-label="${esc(L('Cost currency', 'عملة التكلفة'))}">${['RMB', 'USD'].map(x => `<button type="button" data-alcur="${i}" data-v="${x}" aria-pressed="${x === cur}">${x}</button>`).join('')}</div>
+    <div class="pair">
+      <div class="money"><span data-alsym="${i}">${cur === 'USD' ? '$' : '¥'}</span><input data-alcost="${i}" class="num" inputmode="decimal" autocomplete="off" value="${esc(p.cost || '')}" placeholder="${esc(L('Cost', 'التكلفة'))}" aria-label="${esc(L('Cost in ', 'التكلفة بـ') + cur)}"></div>
+      <output class="alsar" data-alsar="${i}"><small>${esc(L('SAR', 'ريال'))}</small><b>${esc(alSar(p.cost, cur))}</b></output>
+    </div>
+  </div>`;
+}
 
 function renderAlbums(){
   const body = $('albumsBody'); if (!body) return;
@@ -3595,7 +3617,8 @@ function renderAlbum(a, body){
       <div class="field"><label for="alNote">${esc(L('Note for Claude (optional)', 'ملاحظة لـ Claude (اختياري)'))}</label><textarea id="alNote" dir="auto" rows="2" placeholder="${esc(L('e.g. prices in RMB, MOQ 500 pcs, category', 'مثل: الأسعار باليوان، الحد الأدنى 500 حبة، الفئة'))}">${esc(a.note || '')}</textarea></div>
       ${done ? `<p class="alstatus">${esc(a.doneBy === 'claude' ? L('Added by Claude', 'أضافها Claude') : L('Done', 'مكتمل'))}${a.doneNote ? ': <bdi dir="auto">' + esc(a.doneNote) + '</bdi>' : ''}</p>` : ''}
       <div class="aladd"><button type="button" class="primary" data-alpick="alCam">${esc(L('Take photo', 'التقاط صورة'))}</button><button type="button" data-alpick="alFiles">${esc(L('Add from gallery', 'إضافة من المعرض'))}</button></div>
-      <p class="hint">${esc(L('Tap "Card" on the business card photo. Add a note to a photo if the price or size is not visible in it.', 'اضغط «بطاقة» على صورة بطاقة العمل. أضف ملاحظة للصورة إذا لم يظهر فيها السعر أو المقاس.'))}</p>
+      <p class="hint">${esc(L('Tap "Card" on the business card photo. Enter each product\'s cost in RMB or USD to see it in SAR, and add a note if the size is not visible in the photo.', 'اضغط «بطاقة» على صورة بطاقة العمل. أدخل تكلفة كل منتج باليوان أو الدولار لتظهر بالريال، وأضف ملاحظة إذا لم يظهر المقاس في الصورة.'))}</p>
+      <p class="hint" style="font-size:.8rem">${esc(L(`Rates: 1 USD = ${rates.usd} RMB = ${rates.sar} SAR`, `أسعار الصرف: 1 دولار = ${rates.usd} يوان = ${rates.sar} ريال`))}</p>
       <p class="dtmsg${failed ? ' bad' : ''}" id="alMsg" ${up || failed ? '' : 'hidden'}>${esc(up ? L(`Uploading photos… ${up} left`, `جارٍ رفع الصور… متبقٍ ${up}`) : failed ? L(`${failed} ${failed === 1 ? 'photo' : 'photos'} didn't upload. Tap to try again.`, `لم يتم رفع ${failed} من الصور. اضغط عليها لإعادة المحاولة.`) : '')}</p>
     </div>
     ${ph.length || pend.length ? `<div class="algrid">
@@ -3603,6 +3626,7 @@ function renderAlbum(a, body){
         <button type="button" class="im" data-alview="${i}" aria-label="${esc(L('Open photo', 'فتح الصورة'))}">${alImg(p.p)}</button>
         ${p.card ? `<span class="altag">${esc(L('Business card', 'بطاقة العمل'))}</span>` : ''}
         <div class="alrow"><button type="button" class="cardtg" data-alcard="${i}" aria-pressed="${p.card ? 'true' : 'false'}">${esc(L('Card', 'بطاقة'))}</button><button type="button" class="rm adminonly" data-alrm="${i}" aria-label="${esc(L('Remove photo', 'حذف الصورة'))}">${esc(L('Remove', 'حذف'))}</button></div>
+        ${p.card ? '' : alCostBox(a, p, i)}
         <input data-alnote="${i}" dir="auto" autocomplete="off" value="${esc(p.note || '')}" placeholder="${esc(L('Note: price, size…', 'ملاحظة: السعر، المقاس…'))}" aria-label="${esc(L('Photo note', 'ملاحظة الصورة'))}">
       </div>`).join('')}
       ${pend.map(x => `<div class="alph pend"><button type="button" class="im" ${x.fail ? `data-alretry="${x.k}"` : 'disabled'}><img src="${esc(x.d)}" alt=""></button><p class="alup${x.fail ? ' bad' : ''}">${esc(x.fail ? L('Not uploaded. Tap the photo to try again.', 'لم يتم الرفع. اضغط على الصورة لإعادة المحاولة.') : L('Uploading…', 'جارٍ الرفع…'))}</p></div>`).join('')}
@@ -3646,7 +3670,7 @@ function alUpload(id, it){
       const p = await APP_PHOTOS.upload(blob, 'album/' + id);
       alPreview.set(p, it.d);
       const a = albumById(id);
-      if (a && !alPhotos(a).some(x => x.p === p)) { alPhotos(a).push({p, card: false, note: '', t: new Date().toISOString()}); a.updated = new Date().toISOString(); saveAlbums(); }
+      if (a && !alPhotos(a).some(x => x.p === p)) { alPhotos(a).push({p, card: false, note: '', cost: '', cur: alCur(a), t: new Date().toISOString()}); a.updated = new Date().toISOString(); saveAlbums(); }
       const i = list.indexOf(it); if (i > -1) list.splice(i, 1);
     } catch(e) { it.fail = true; }
     if (albumOpen === id) alRefresh();
@@ -3675,11 +3699,15 @@ async function alExport(a, btn){
     if (files.length < alPhotos(a).length) throw new Error('missing photos');
     const zip = new JSZip(), now = new Date().toISOString();
     const meta = {format: 'pcm-album/1', id: a.id, name: a.name || '', note: a.note || '', created: a.created || '', exported: now,
-      photos: files.map(f => ({file: f.file, path: 'sb:' + f.p.p, card: !!f.p.card, note: f.p.note || ''}))};
+      rates: {usd_rmb: rates.usd, usd_sar: rates.sar},
+      photos: files.map(f => { const o = {file: f.file, path: 'sb:' + f.p.p, card: !!f.p.card, note: f.p.note || ''};
+        if (!f.p.card && num(f.p.cost) !== null) { const cur = alCur(a, f.p), r = convertRaw(f.p.cost, cur); Object.assign(o, {cost: f.p.cost, cur, sar: r ? fixP(r.sar) : ''}); }
+        return o; })};
+    const costTxt = p => { if (p.card || num(p.cost) === null) return ''; const cur = alCur(a, p), r = convertRaw(p.cost, cur); return `  - cost ${cur === 'USD' ? '$' : '¥'}${p.cost}${r ? ` (SAR ${fixP(r.sar)})` : ''}`; };
     for (const f of files) zip.file(f.file, await f.blob.arrayBuffer());
     zip.file('album.json', JSON.stringify(meta, null, 2));
     zip.file('README.txt', [`Photo album from Product Card Maker`, `Album: ${a.name || '(no name)'}`, a.note ? `Note: ${a.note}` : '', `Created: ${a.created || ''}`, `Album id: ${a.id}`, '',
-      ...files.map(f => `${f.file}${f.p.card ? '  (business card)' : ''}${f.p.note ? '  - ' + f.p.note : ''}`), '',
+      ...files.map(f => `${f.file}${f.p.card ? '  (business card)' : ''}${costTxt(f.p)}${f.p.note ? '  - ' + f.p.note : ''}`), '',
       'For Claude: album.json lists each photo with its storage path (sb:album/...). The photos are already uploaded, so products can use these paths directly.'].filter(x => x !== null).join('\n'));
     const blob = await zip.generateAsync({type: 'blob'}), fname = `album-${stampToday()}-${alSlug(a)}.zip`;
     let r;
@@ -3725,6 +3753,18 @@ $('albumsBody').addEventListener('change', e => {
   if (t.id === 'alName') { a.name = t.value.trim(); a.updated = now; saveAlbums(); }
   else if (t.id === 'alNote') { a.note = t.value.trim(); a.updated = now; saveAlbums(); }
   else if (t.dataset.alnote !== undefined) { const p = alPhotos(a)[+t.dataset.alnote]; if (p) { p.note = t.value.trim(); a.updated = now; saveAlbums(); } }
+  else if (t.dataset.alcost !== undefined) {
+    const p = alPhotos(a)[+t.dataset.alcost]; if (!p) return;
+    const n = num(t.value); p.cost = n === null ? '' : String(n); p.cur = alCur(a, p);
+    t.value = p.cost; a.updated = now; saveAlbums();
+  }
+});
+// show the SAR cost while typing
+$('albumsBody').addEventListener('input', e => {
+  const t = e.target; if (t.dataset.alcost === undefined) return;
+  const a = albumOpen && albumById(albumOpen), p = a && alPhotos(a)[+t.dataset.alcost]; if (!p) return;
+  const out = $('albumsBody').querySelector(`[data-alsar="${t.dataset.alcost}"] b`);
+  if (out) out.textContent = alSar(t.value, alCur(a, p));
 });
 $('albumsBody').addEventListener('click', async e => {
   const openB = e.target.closest('[data-album]'); if (openB) { albumOpen = openB.dataset.album; renderAlbums(); window.scrollTo(0, 0); return; }
@@ -3735,6 +3775,18 @@ $('albumsBody').addEventListener('click', async e => {
   if (view) { const p = alPhotos(a)[+view.dataset.alview], u = p && alSrc(p.p); if (u) { $('viewerImg').src = u; $('viewer').hidden = false; $('viewerClose').focus(); } return; }
   const retry = e.target.closest('[data-alretry]');
   if (retry) { const it = (alPending.get(a.id) || []).find(x => x.k === retry.dataset.alretry); if (it) { alUpload(a.id, it); it.fail = false; alRefresh(); } return; }
+  const curB = e.target.closest('[data-alcur]');
+  if (curB) {
+    const i = curB.dataset.alcur, p = alPhotos(a)[+i]; if (!p) return;
+    p.cur = a.cur = curB.dataset.v;   // new photos in this album start in the last currency picked
+    a.updated = new Date().toISOString(); saveAlbums();
+    const box = curB.closest('.alcost');
+    box.querySelectorAll('[data-alcur]').forEach(b => b.setAttribute('aria-pressed', String(b === curB)));
+    box.querySelector('[data-alsym]').textContent = p.cur === 'USD' ? '$' : '¥';
+    box.querySelector('[data-alcost]').setAttribute('aria-label', L('Cost in ', 'التكلفة بـ') + p.cur);
+    box.querySelector('[data-alsar] b').textContent = alSar(p.cost, p.cur);
+    return;
+  }
   const card = e.target.closest('[data-alcard]');
   if (card) { const p = alPhotos(a)[+card.dataset.alcard]; if (p) { p.card = !p.card; a.updated = new Date().toISOString(); saveAlbums(); alRefresh(); } return; }
   const rm = e.target.closest('[data-alrm]');
