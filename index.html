@@ -2147,7 +2147,7 @@ const VAT = 0.15;
 const sar = v => { const n = (v < 0 ? '-' : '') + fmtN(Math.abs(v)); return L('SAR ' + n, n + ' ر.س'); };
 function fillCalcProducts(sel){
   const o = $('cProduct');
-  o.innerHTML = `<option value="">${L('Enter cost manually','إدخال التكلفة يدويًا')}</option>` + cards.filter(c => !c.sample || cards.length === 1).map(c => `<option value="${c.id}">${esc(pname(c))}</option>`).join('');
+  o.innerHTML = `<option value="">${L('Enter cost manually','إدخال التكلفة يدويًا')}</option>` + cards.filter(c => !c.sample || cards.length === 1).map(c => `<option value="${c.id}">${esc(pname(c))}${(c.supplier || '').trim() ? ' · ' + esc(c.supplier.trim().split(/ [–(]/)[0]) : ''}</option>`).join('');
   o.value = sel && cards.some(c => c.id === sel) ? sel : '';
 }
 function calc(){
