@@ -2780,13 +2780,13 @@ async function renderBillPages(b){
   const photos = {};
   await Promise.all(b.lines.map(async l => { const c = cards.find(x => x.id === l.pid), src = c && imgsOf(c)[0]; photos[l.pid] = src ? await loadImg(src) : null; }));
   // columns (written left-to-right, mirrored for Arabic)
-  const PHW = 76, cTot = W - M, cUnit = cTot - 230, cQty = cUnit - 220, nameX = M + PHW + 18, nameW = cQty - 160 - nameX;
+  const PHW = 228, cTot = W - M, cUnit = cTot - 230, cQty = cUnit - 220, nameX = M + PHW + 18, nameW = cQty - 160 - nameX;
   const ROWS = [], groups = billGroups(b);
   // build a flat list of things to draw, each with its height
   const probe = document.createElement('canvas').getContext('2d');
   groups.forEach(g => {
     ROWS.push({t: 'group', g, h: 64});
-    g.lines.forEach(l => { probe.font = `600 25px ${B}`; const ls = wrap(probe, billName(l), nameW, 2);
+    g.lines.forEach(l => { probe.font = `600 25px ${B}`; const ls = wrap(probe, billName(l), nameW, 4);
       probe.font = `600 20px ${B}`; const as = l.adjSpec ? wrap(probe, `${adjLabel(l.adjSpec)} (${moneyS(l.adj, b.cur)}, ${L('was', 'كان')} ${m(l.unit0)})`, cQty - 24 - nameX, 2) : [];
       ROWS.push({t: 'line', l, ls, as, h: Math.max(PHW + 16, 14 + ls.length * 32 + (l.variant ? 30 : 0) + as.length * 27 + 10)}); });
     ROWS.push({t: 'sub', g, h: 56});
@@ -2794,10 +2794,11 @@ async function renderBillPages(b){
   ROWS.push({t: 'totals', h: 60 + 52 * (2 + (b.pct ? 1 : 0) + (b.vat ? 1 : 0) + adjRows(b.tt, b.oadjSpec).length) + 24});
   const headH = 120 + 40 + 60 + (b.note ? 44 : 0) + 30, FOOT = 80, TH = 46;
   const pages = [[]]; let y = headH + TH;
-  for (const r of ROWS) {
-    if (y + r.h > H - FOOT && pages[pages.length - 1].length) { pages.push([]); y = M + TH; }
+  ROWS.forEach((r, i) => {
+    const keep = r.t === 'group' && ROWS[i + 1] ? ROWS[i + 1].h : 0;   // a supplier name never sits alone at the bottom of a page
+    if (y + r.h + keep > H - FOOT && pages[pages.length - 1].length) { pages.push([]); y = M + TH; }
     pages[pages.length - 1].push(Object.assign(r, {y})); y += r.h;
-  }
+  });
   const tableHead = (ctx, y) => {
     ctx.fillStyle = SOFT; ctx.fillRect(M, y, W - 2 * M, TH);
     txt(ctx, L('Product', 'المنتج'), M + 14, y + 12, `600 20px ${B}`, MUT);
