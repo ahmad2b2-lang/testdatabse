@@ -2963,13 +2963,13 @@ async function renderBillPages(b){
   const photos = {};
   await Promise.all(b.lines.map(async l => { const c = cards.find(x => x.id === l.pid), src = c && imgsOf(c)[0]; photos[l.pid] = src ? await loadImg(src) : null; }));
   // columns (written left-to-right, mirrored for Arabic)
-  const PHW = 228, cTot = W - M, cUnit = cTot - 230, cQty = cUnit - 220, nameX = M + PHW + 18, nameW = cQty - 160 - nameX;
+  const PHW = 296, cTot = W - M, cUnit = cTot - 210, cQty = cUnit - 190, nameX = M + PHW + 18, nameW = cQty - 160 - nameX;   // photos 1.3× (was 228)
   const ROWS = [], groups = billGroups(b);
   // build a flat list of things to draw, each with its height
   const probe = document.createElement('canvas').getContext('2d');
   groups.forEach(g => {
     ROWS.push({t: 'group', g, h: 64});
-    g.lines.forEach(l => { probe.font = `600 25px ${B}`; const ls = wrap(probe, billName(l), nameW, 4);
+    g.lines.forEach(l => { probe.font = `600 25px ${B}`; const ls = wrap(probe, billName(l), nameW, 6);
       probe.font = `600 20px ${B}`; const as = l.adjSpec ? wrap(probe, `${adjLabel(l.adjSpec)} (${moneyS(l.adj, b.cur)}, ${L('was', 'كان')} ${m(l.unit0)})`, cQty - 24 - nameX, 2) : [];
       ROWS.push({t: 'line', l, ls, as, h: Math.max(PHW + 16, 14 + ls.length * 32 + (l.variant ? 30 : 0) + as.length * 27 + 10)}); });
     ROWS.push({t: 'sub', g, h: 56});
