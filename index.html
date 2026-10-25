@@ -534,6 +534,34 @@ html.guest .adminonly{display:none!important}
 .aladd{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .aladd button{min-height:50px}
 .algrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pmtabs{display:flex;flex-wrap:wrap;gap:6px}
+.pmtabs button{min-height:38px;padding:0 12px;font-size:.84rem;white-space:nowrap;border-radius:999px;flex:0 0 auto}
+.pmtabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.pmfilters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.pmfilters select,.pmfilters input{min-width:0}
+.pmgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (min-width:600px){.pmgrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
+.pmcell{position:relative;display:grid;padding:0;min-height:0;border-radius:12px;overflow:hidden;background:var(--surface);text-align:start}
+.pmcell img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--sunk)}
+.pmcap{font-size:.7rem;font-weight:600;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmn{position:absolute;top:5px;inset-inline-end:5px;background:var(--accent);color:var(--accent-fg);font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:999px}
+.pmsheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));display:grid;align-content:start;gap:12px}
+.pmsheet[hidden]{display:none}
+.pmtop{display:flex;align-items:center;gap:12px}
+.pmtop button{min-height:40px}
+.pmbig{width:100%;max-height:56vh;object-fit:contain;background:var(--sunk);border-radius:12px;min-height:120px}
+.pmname{margin:0;font-weight:700}
+.pmuses{display:flex;flex-wrap:wrap;gap:6px}
+.pmuses button{min-height:34px;font-size:.8rem;padding:0 10px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmacts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pmchg{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.pmchg li{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--surface)}
+.pmpair{display:flex;align-items:center;gap:4px;flex:0 0 auto;color:var(--muted)}
+.pmpair img{width:52px;height:52px;object-fit:cover;border-radius:8px;background:var(--sunk)}
+.pmchgtx{display:grid;gap:2px;min-width:0;flex:1}
+.pmchgtx span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmchgtx small{color:var(--muted);font-size:.74rem}
+.pmchg button{min-height:38px;padding:0 12px;flex:0 0 auto}
 .alph{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);display:grid;align-content:start}
 .alph.card{border:2px solid var(--accent)}
 .alph .im{display:block;width:100%;aspect-ratio:1;padding:0;border:0;border-radius:0;background:var(--sunk);min-height:0}
@@ -750,6 +778,10 @@ document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'a
       <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h11a3 3 0 0 1 3 3v11"/><circle cx="8.5" cy="11" r="1.6"/><path d="M3 17l4.5-4 4 3.5 2-1.5 3.5 3"/></svg></span>
       <span><strong>ألبومات الصور</strong><small id="albumsTileN">صوّر المنتجات الآن وأضفها لاحقًا</small></span>
     </button>
+    <button type="button" class="tile adminonly" id="goPhotos">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/><path d="M3 8V5a1 1 0 0 1 1-1h3M17 4h3a1 1 0 0 1 1 1v3"/></svg></span>
+      <span><strong>مدير الصور</strong><small id="pmTileN">قص صور المنتجات وبطاقات العمل أو استبدالها</small></span>
+    </button>
     <button type="button" class="tile" id="goCalc">
       <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h2M16 15v3"/></svg></span>
       <span><strong>حاسبة الأرباح</strong><small>احسب الربح بالريال السعودي</small></span>
@@ -963,6 +995,11 @@ document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'a
     <form class="panel" id="expForm" novalidate></form>
     <div id="expList" style="display:grid;gap:12px"></div>
   </section>
+  <section id="pmPage" style="display:grid;gap:14px" hidden aria-label="مدير الصور">
+    <div class="topbar"><button type="button" class="homebtn" id="pmHome"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>الرئيسية</button><label class="langpick"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z"/></svg><span class="lpcode" aria-hidden="true">EN</span><svg class="lpcaret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><select data-langpick aria-label="Language / اللغة / 语言"><option value="en" lang="en">English</option><option value="ar" lang="ar">العربية</option><option value="zh" lang="zh">中文</option></select></label></div>
+    <h2 class="pagetitle titleband" id="pmTitle">مدير الصور</h2>
+    <div id="pmBody" style="display:grid;gap:12px"></div>
+  </section>
   <section id="agPage" style="display:grid;gap:14px" hidden aria-label="حساب الوكيل">
     <div class="topbar"><button type="button" class="homebtn" id="agHome"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>الرئيسية</button><label class="langpick"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z"/></svg><span class="lpcode" aria-hidden="true">EN</span><svg class="lpcaret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg><select data-langpick aria-label="Language / اللغة / 语言"><option value="en" lang="en">English</option><option value="ar" lang="ar">العربية</option><option value="zh" lang="zh">中文</option></select></label></div>
     <h2 class="pagetitle titleband" id="agTitle">حساب الوكيل</h2>
@@ -996,6 +1033,7 @@ document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'a
   <div class="trimbar"><button type="button" id="trimWhole"></button><button type="button" class="primary" id="trimDone"></button></div>
   <button type="button" class="trimskip" id="trimSkip" hidden></button>
 </div>
+<div class="pmsheet" id="pmSheet" hidden role="dialog" aria-modal="true"></div><input type="file" id="pmFile" accept="image/*" hidden>
 <div class="viewer" id="viewer" hidden><button type="button" id="viewerClose">إغلاق</button><img id="viewerImg" alt="بطاقة عمل المورّد"><p id="viewerNote" hidden></p></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1188,7 +1226,8 @@ if (typeof JSZip !== 'function') (function(){
         }
         // photos no saved product points to any more (removed from a card, or card deleted)
         const used = new Set([...savedPaths.values()].flat());
-        const orphans = [...new Set([...uploaded.values(), ...urlToPath.values()])].filter(p => !used.has(p) && !p.startsWith('album/'));   // album photos are removed only when their album is deleted
+        const keepP = typeof window.APP_KEEP_PATHS === 'function' ? window.APP_KEEP_PATHS() : new Set();   // kept for undo in Photo Manager, or a supplier's card
+        const orphans = [...new Set([...uploaded.values(), ...urlToPath.values()])].filter(p => !used.has(p) && !p.startsWith('album/') && !keepP.has(p));   // album photos are removed only when their album is deleted
         if (orphans.length) {
           const { error } = await sb.storage.from(BUCKET).remove(orphans);
           if (!error) {
@@ -1242,6 +1281,11 @@ if (typeof JSZip !== 'function') (function(){
       lsTry(() => localStorage.setItem(ALBUM_LINKS, JSON.stringify(albumLinks)));
       return out;
     },
+    // Photo Manager helpers
+    pathOf(u){ return (typeof u === 'string' && urlToPath.get(u)) || ''; },
+    adopt(u, p){ if (u && p) urlToPath.set(u, p); },
+    async put(path, blob){ const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: true, cacheControl: '31536000' }); if (error) throw error; return path; },
+    async files(){ const { data, error } = await sb.rpc('pm_files'); if (error) throw error; return data || []; },
     // removes album photos from storage, except any a saved product now uses
     async remove(paths){
       if (!sb || !paths.length) return;
@@ -1442,7 +1486,7 @@ function setLang(l, rerender){
   document.querySelectorAll('.langpick .lpcode').forEach(x => { x.textContent = {en: 'EN', ar: 'ع', zh: '中'}[LANG]; });
   applyStatic();
   if (rerender) {
-    renderGallery(); updateNav(); renderSuppliers(); fillCalcProducts($('cProduct').value); if (!$('cmpPage').hidden) renderCompare(); if (!$('shopPage').hidden) renderShop(); if (!$('cartPage').hidden) renderCart(); if (!$('sumPage').hidden) renderSummary(); if (!$('agPage').hidden) renderAgent(); updateAgTile(); updateCartBadges(); if (!$('expPage').hidden) renderExpenses(true); updateExpTile(); if (!$('billsPage').hidden) renderBills(); updateBillsTile(); if (!$('albumsPage').hidden) renderAlbums(); updateAlbumsTile();
+    renderGallery(); updateNav(); renderSuppliers(); fillCalcProducts($('cProduct').value); if (!$('cmpPage').hidden) renderCompare(); if (!$('shopPage').hidden) renderShop(); if (!$('cartPage').hidden) renderCart(); if (!$('sumPage').hidden) renderSummary(); if (!$('agPage').hidden) renderAgent(); if (!$('pmPage').hidden && !pm.open) renderPhotos(); updatePmTile(); updateAgTile(); updateCartBadges(); if (!$('expPage').hidden) renderExpenses(true); updateExpTile(); if (!$('billsPage').hidden) renderBills(); updateBillsTile(); if (!$('albumsPage').hidden) renderAlbums(); updateAlbumsTile();
     fillCalcVariants(cards.find(x => x.id === $('cProduct').value), $('cVariant').value); calc();
     renderVariantsUI();
     $('saveBtn').textContent = editingId ? L('Update card','تحديث البطاقة') : L('Generate card','إنشاء البطاقة');
@@ -1716,7 +1760,7 @@ $('cur').addEventListener('change', () => { setCur($('cur').value); store.set(CK
 let idx = 0;
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 function showPage(page){
-  $('gatePage').hidden = page !== 'gate'; $('homePage').hidden = page !== 'home'; $('formPage').hidden = page !== 'form'; $('savedList').hidden = page !== 'cards'; $('calcPage').hidden = page !== 'calc'; $('supPage').hidden = page !== 'sup'; $('cmpPage').hidden = page !== 'compare'; $('shopPage').hidden = page !== 'shop'; $('cartPage').hidden = page !== 'cart'; $('sumPage').hidden = page !== 'summary'; $('expPage').hidden = page !== 'expenses'; $('agPage').hidden = page !== 'agent'; $('billsPage').hidden = page !== 'bills'; $('albumsPage').hidden = page !== 'albums';
+  $('gatePage').hidden = page !== 'gate'; $('homePage').hidden = page !== 'home'; $('formPage').hidden = page !== 'form'; $('savedList').hidden = page !== 'cards'; $('calcPage').hidden = page !== 'calc'; $('supPage').hidden = page !== 'sup'; $('cmpPage').hidden = page !== 'compare'; $('shopPage').hidden = page !== 'shop'; $('cartPage').hidden = page !== 'cart'; $('sumPage').hidden = page !== 'summary'; $('expPage').hidden = page !== 'expenses'; $('agPage').hidden = page !== 'agent'; $('billsPage').hidden = page !== 'bills'; $('albumsPage').hidden = page !== 'albums'; $('pmPage').hidden = page !== 'photos';
   window.scrollTo(0, 0);
 }
 // What a search looks in: the "Search in" list on the product and supplier databases
@@ -3748,6 +3792,370 @@ $('agBody').addEventListener('click', async e => {
   }
 });
 updateAgTile();
+
+// ===== Photo Manager: every product photo and supplier business card in one place (admin only) =====
+// Trim, rotate or replace a photo once, and every product (and supplier) using it gets the new one.
+// The old file is kept for 30 days so the change can be undone; after that it is deleted.
+// The grid shows small copies (thumb/<path>); tapping a photo always opens the full original.
+const PM_TRASH = 'pcm.phototrash.v1', PM_DAYS = 30, PM_PAGE = 60, PM_THUMB = 'thumb/';
+const pm = {view: 'photo', sup: '', q: '', shown: PM_PAGE, open: null, files: null, filesErr: false, busy: false};
+let pmTrash = (() => { const v = store.get(PM_TRASH, null); return Array.isArray(v) ? v : []; })();
+const pmSrc = new Map();          // path -> URL shown in the grid (small copy, or the original while no small copy exists)
+let pmItemsNow = new Map();       // path -> {path, kind, uses, url}
+const pmRid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pmSaveTrash = () => store.set(PM_TRASH, pmTrash);
+const pmCard = id => cards.find(c => c.id === id);
+const pmP = () => window.APP_PHOTOS;
+// files the app must not delete on its own: originals waiting in the 30-day undo list, and supplier cards saved without products
+window.APP_KEEP_PATHS = () => {
+  const keep = new Set();
+  for (const t of pmTrash) { if (t.old) { keep.add(t.old); keep.add(PM_THUMB + t.old); } }
+  for (const v of Object.values(suppliers || {})) if (v && typeof v.biz === 'string' && v.biz.startsWith('sb:')) keep.add(v.biz.slice(3));
+  return keep;
+};
+
+// every saved photo and business card, with the products and suppliers that use it
+function pmItems(){
+  const P = pmP(), map = new Map();
+  const add = (path, kind, use, url) => {
+    if (!path) return;
+    let it = map.get(path); if (!it) { it = {path, kind, uses: [], url: url || ''}; map.set(path, it); }
+    if (kind === 'card') it.kind = 'card';
+    if (url && !it.url) it.url = url;
+    it.uses.push(use);
+  };
+  for (const c of cards) {
+    if (!c || c.sample) continue;
+    if (Array.isArray(c.imgs)) c.imgs.forEach((u, i) => add(P.pathOf(u), 'photo', {c: c.id, f: 'imgs', i}, u));
+    else if (c.img) add(P.pathOf(c.img), 'photo', {c: c.id, f: 'img'}, c.img);
+    if (c.biz) add(P.pathOf(c.biz), 'card', {c: c.id, f: 'biz'}, c.biz);
+  }
+  for (const [k, v] of Object.entries(suppliers || {})) {
+    if (v && typeof v.biz === 'string' && v.biz.startsWith('sb:')) { const p = v.biz.slice(3); add(p, 'card', {r: k}, (window.APP_SUPCARDS || {})[p]); }
+  }
+  pmItemsNow = map;
+  return map;
+}
+function pmInfo(it){
+  const u = it.uses.find(x => x.c), c = u && pmCard(u.c), r = it.uses.find(x => x.r);
+  const sup = ((c && c.supplier) || (r && suppliers[r.r] && suppliers[r.r].name) || '').trim();
+  const name = it.kind === 'card' ? (sup || (c ? pname(c) : '')) : (c ? pname(c) : sup);
+  return {name, sup, card: c};
+}
+const pmCounts = items => { let ph = 0, cd = 0; for (const it of items.values()) it.kind === 'card' ? cd++ : ph++; return {ph, cd}; };
+function updatePmTile(){
+  try {   // may run (language switch) before the data is ready
+    const t = $('pmTileN'); if (!t) return;
+    const {ph, cd} = pmCounts(pmItems());
+    t.textContent = L(`${ph} photos · ${cd} business cards`, `${ph} صورة · ${cd} بطاقة عمل`);
+  } catch(e) {}
+}
+
+// ---- small helpers for images ----
+function pmMakeThumb(blob){
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(blob), im = new Image();
+    im.onload = () => {
+      const w = im.naturalWidth, h = im.naturalHeight, s = Math.min(1, 480 / Math.max(w, h)), cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(w * s)); cv.height = Math.max(1, Math.round(h * s));
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); URL.revokeObjectURL(u);
+      cv.toBlob(b => b ? res(b) : rej(new Error('thumb')), 'image/jpeg', .82);
+    };
+    im.onerror = e => { URL.revokeObjectURL(u); rej(e); };
+    im.src = u;
+  });
+}
+function pmDims(blob){
+  return new Promise((res, rej) => { const u = URL.createObjectURL(blob), im = new Image(); im.onload = () => { URL.revokeObjectURL(u); res({w: im.naturalWidth, h: im.naturalHeight}); }; im.onerror = e => { URL.revokeObjectURL(u); rej(e); }; im.src = u; });
+}
+async function pmFetch(url){ const r = await fetch(url); if (!r.ok) throw new Error('fetch ' + r.status); return r.blob(); }
+async function pmOrigUrl(path){
+  const it = pmItemsNow.get(path); if (it && it.url) return it.url;
+  const m = await pmP().sign([path]); return m.get(path) || '';
+}
+// small copies that don't exist yet (photos added after Photo Manager was set up) are made in the background, two at a time
+const pmQueue = [], pmQueued = new Set(); let pmWorkers = 0;
+function pmQueueThumb(path, url){
+  if (window.APP_IS_GUEST || pmQueued.has(path)) return;
+  pmQueued.add(path); pmQueue.push([path, url]);
+  while (pmWorkers < 2 && pmQueue.length) pmWork();
+}
+async function pmWork(){
+  pmWorkers++;
+  try {
+    while (pmQueue.length) {
+      const [path, url] = pmQueue.shift();
+      try { const th = await pmMakeThumb(await pmFetch(url)); await pmP().put(PM_THUMB + path, th); } catch(e) {}
+    }
+  } finally { pmWorkers--; }
+}
+// signs the small copies of these photos (or the originals while a small copy is missing) and shows them
+async function pmWant(paths){
+  const P = pmP(), need = [...new Set(paths)].filter(p => p && !pmSrc.has(p));
+  if (need.length) {
+    let th = new Map(); try { th = await P.sign(need.map(p => PM_THUMB + p)); } catch(e) {}
+    const miss = [];
+    for (const p of need) { const u = th.get(PM_THUMB + p); if (u) pmSrc.set(p, u); else miss.push(p); }
+    if (miss.length) {
+      const noUrl = miss.filter(p => !(pmItemsNow.get(p) || {}).url);
+      let og = new Map(); try { if (noUrl.length) og = await P.sign(noUrl); } catch(e) {}
+      for (const p of miss) {
+        const own = (pmItemsNow.get(p) || {}).url, u = own || og.get(p);
+        if (u) { pmSrc.set(p, u); if (own) pmQueueThumb(p, u); }
+      }
+    }
+  }
+  document.querySelectorAll('#pmPage img[data-pmimg]').forEach(im => { const u = pmSrc.get(im.dataset.pmimg); if (u && im.getAttribute('src') !== u) im.src = u; });
+}
+
+// ---- changes ----
+// points the given uses of photo `oldPath` to photo `path` (signed `url`); returns the uses that were changed
+function pmPoint(oldPath, uses, url, path){
+  const P = pmP(), done = [], now = new Date().toISOString();
+  let cardsChanged = false, regChanged = false;
+  for (const u of uses) {
+    if (u.c) {
+      const c = pmCard(u.c); if (!c) continue;
+      if (u.f === 'imgs') { const i = (c.imgs || []).findIndex(x => P.pathOf(x) === oldPath); if (i < 0) continue; c.imgs[i] = url; }
+      else if (u.f === 'img') { if (P.pathOf(c.img) !== oldPath) continue; c.img = url; }
+      else { if (P.pathOf(c.biz) !== oldPath) continue; c.biz = url; }
+      c.updated = now; cardsChanged = true; done.push({c: u.c, f: u.f});
+    } else if (u.r) {
+      const v = suppliers[u.r]; if (!v || v.biz !== 'sb:' + oldPath) continue;
+      v.biz = 'sb:' + path; (window.APP_SUPCARDS = window.APP_SUPCARDS || {})[path] = url; regChanged = true; done.push({r: u.r});
+    }
+  }
+  if (cardsChanged) store.set(KEY, cards);
+  if (regChanged) store.set(SKEY, suppliers);
+  return done;
+}
+const pmUsesFromRefs = refs => refs.map(r => r.c ? {c: r.c, f: r.f} : {r: r.r});
+function pmRefreshApp(){ try { renderGallery(); updateNav(); if (!$('supPage').hidden) renderSuppliers(true); } catch(e) {} updatePmTile(); }
+
+// saves `blob` as the new version of photo `it` and points everything that used the old one to it
+async function pmSaveNew(it, blob, kind){
+  const P = pmP(), folder = it.path.includes('/') ? it.path.slice(0, it.path.lastIndexOf('/')) : 'photos';
+  const neu = await P.upload(blob, folder);
+  if (neu === it.path) return false;   // exactly the same picture
+  const url = (await P.sign([neu])).get(neu); if (!url) throw new Error('sign');
+  P.adopt(url, neu);
+  try { const th = await pmMakeThumb(blob); await P.put(PM_THUMB + neu, th); pmSrc.delete(neu); } catch(e) {}
+  const refs = pmPoint(it.path, it.uses, url, neu);
+  pmTrash.unshift({id: pmRid(), at: new Date().toISOString(), kind, old: it.path, neu, refs, name: pmInfo(it).name});
+  pmSaveTrash(); pmRefreshApp();
+  return neu;
+}
+async function pmTrimIt(it){
+  const url = await pmOrigUrl(it.path); if (!url) throw new Error('url');
+  const blob = await pmFetch(url), d = await pmDims(blob);
+  const out = await Trim.photo(blob, Math.max(d.w, d.h), .92);   // full size, high quality: trimming never makes a photo softer
+  if (!out) return null;
+  return pmSaveNew(it, await (await fetch(out)).blob(), 'trim');
+}
+async function pmReplaceIt(it, file){
+  const out = await Trim.photo(file, 1600, .85);
+  if (!out) return null;
+  return pmSaveNew(it, await (await fetch(out)).blob(), 'replace');
+}
+function pmMakeMain(it){
+  const P = pmP(); let n = 0;
+  for (const u of it.uses) {
+    if (u.f !== 'imgs') continue;
+    const c = pmCard(u.c); if (!c || !Array.isArray(c.imgs)) continue;
+    const i = c.imgs.findIndex(x => P.pathOf(x) === it.path); if (i <= 0) continue;
+    const [x] = c.imgs.splice(i, 1); c.imgs.unshift(x); c.updated = new Date().toISOString(); n++;
+  }
+  if (n) { store.set(KEY, cards); pmRefreshApp(); }
+  return n;
+}
+function pmDelete(paths, label){
+  const at = new Date().toISOString();
+  for (const p of paths) if (!pmTrash.some(t => t.old === p)) pmTrash.unshift({id: pmRid(), at, kind: 'delete', old: p, refs: [], name: label || ''});
+  pmSaveTrash();
+}
+// business cards saved more than once (same picture in different folders): keep one copy and point everything to it
+function pmDupGroups(items){
+  const g = new Map();
+  for (const it of items.values()) if (it.kind === 'card') { const b = it.path.slice(it.path.lastIndexOf('/') + 1); (g.get(b) || g.set(b, []).get(b)).push(it); }
+  return [...g.values()].filter(x => x.length > 1);
+}
+async function pmMerge(){
+  const groups = pmDupGroups(pmItems()); let removed = 0;
+  for (const grp of groups) {
+    grp.sort((a, b) => b.uses.length - a.uses.length || (a.path.startsWith('album/') ? -1 : 0));
+    const keep = grp[0]; let url = keep.url;
+    if (!url) { url = (await pmP().sign([keep.path])).get(keep.path) || ''; if (!url) continue; pmP().adopt(url, keep.path); }
+    for (const it of grp.slice(1)) {
+      const refs = pmPoint(it.path, it.uses, url, keep.path);
+      pmTrash.unshift({id: pmRid(), at: new Date().toISOString(), kind: 'merge', old: it.path, neu: keep.path, refs, name: pmInfo(it).name});
+      removed++;
+    }
+  }
+  pmSaveTrash(); pmRefreshApp();
+  return removed;
+}
+async function pmUndo(id){
+  const t = pmTrash.find(x => x.id === id); if (!t) return;
+  if (t.kind !== 'delete' && pmTrash.some(x => x !== t && x.old === t.neu && x.kind !== 'delete')) { toast(L('Undo the newer change to this photo first.', 'تراجع أولًا عن التعديل الأحدث على هذه الصورة.')); return; }
+  const P = pmP();
+  if (t.kind !== 'delete') {
+    const url = (await P.sign([t.old])).get(t.old); if (!url) throw new Error('sign');
+    P.adopt(url, t.old);
+    pmPoint(t.neu, pmUsesFromRefs(t.refs || []), url, t.old);
+  }
+  pmTrash = pmTrash.filter(x => x !== t); pmSaveTrash(); pmRefreshApp();
+  // the trimmed or replacement photo is removed once nothing uses it (checked against the saved data)
+  if (t.kind === 'trim' || t.kind === 'replace') { try { await window.APP_STORAGE_FLUSH(); await P.remove([t.neu, PM_THUMB + t.neu]); } catch(e) {} }
+}
+// originals older than 30 days are deleted for good (only if nothing uses them)
+async function pmPurge(){
+  const cut = Date.now() - PM_DAYS * 864e5, old = pmTrash.filter(t => Date.parse(t.at) < cut);
+  if (!old.length || window.APP_IS_GUEST) return;
+  pmTrash = pmTrash.filter(t => !old.includes(t)); pmSaveTrash();
+  try { await window.APP_STORAGE_FLUSH(); await pmP().remove(old.flatMap(t => [t.old, PM_THUMB + t.old])); } catch(e) {}
+}
+async function pmLoadFiles(){
+  try { pm.files = await pmP().files(); pm.filesErr = false; } catch(e) { pm.files = []; pm.filesErr = true; }
+}
+
+// ---- screens ----
+const PM_KIND = {trim: ['Trimmed', 'قُصّت'], replace: ['Replaced', 'استُبدلت'], merge: ['Duplicate removed', 'نسخة مكررة أُزيلت'], delete: ['Deleted', 'حُذفت']};
+function pmList(items){
+  if (pm.view === 'unused') {
+    const gone = new Set(pmTrash.map(t => t.old));
+    return (pm.files || []).filter(f => !items.has(f.name) && !gone.has(f.name)).map(f => ({path: f.name, kind: 'unused', uses: [], size: f.size}));
+  }
+  const terms = pm.q.toLowerCase().split(/\s+/).filter(Boolean);
+  return [...items.values()].filter(it => it.kind === pm.view).map(it => Object.assign(it, {info: pmInfo(it)}))
+    .filter(it => !pm.sup || supKey(it.info.sup) === pm.sup)
+    .filter(it => !terms.length || terms.every(w => (it.info.name + ' ' + it.info.sup + ' ' + (it.info.card ? [it.info.card.nameEn, it.info.card.nameAr, it.info.card.nameZh, it.info.card.name].join(' ') : '')).toLowerCase().includes(w)))
+    .sort((a, b) => a.info.sup.localeCompare(b.info.sup) || a.info.name.localeCompare(b.info.name));
+}
+function renderPhotos(){
+  $('pmTitle').textContent = L('Photo Manager', 'مدير الصور');
+  const items = pmItems(), {ph, cd} = pmCounts(items), list = pmList(items);
+  const dups = pmDupGroups(items).reduce((n, g) => n + g.length - 1, 0);
+  const tab = (v, en, ar, n) => `<button type="button" data-pmview="${v}" aria-pressed="${pm.view === v}">${esc(L(en, ar))}${n === null || n === undefined ? '' : ` (${n})`}</button>`;
+  const sups = [...new Map([...items.values()].filter(it => it.kind === (pm.view === 'card' ? 'card' : 'photo')).map(it => { const s = pmInfo(it).sup; return [supKey(s), s]; }).filter(([k]) => k)).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  let main = '';
+  if (pm.view === 'changed') {
+    main = pmTrash.length ? `<p class="hint" style="margin:0">${esc(L(`Changed and deleted photos are kept for ${PM_DAYS} days, so you can undo. After that the old files are deleted.`, `تُحفظ الصور المعدّلة والمحذوفة ${PM_DAYS} يومًا لتتمكن من التراجع، ثم تُحذف الملفات القديمة.`))}</p>
+      <ul class="pmchg">${pmTrash.map(t => { const left = Math.max(0, Math.ceil((Date.parse(t.at) + PM_DAYS * 864e5 - Date.now()) / 864e5)), k = PM_KIND[t.kind] || PM_KIND.delete;
+        return `<li><span class="pmpair"><img data-pmimg="${esc(t.old)}" alt="">${t.neu ? `<span aria-hidden="true">→</span><img data-pmimg="${esc(t.neu)}" alt="">` : ''}</span>
+          <span class="pmchgtx"><b>${esc(L(k[0], k[1]))}</b><span dir="auto">${esc(t.name || '')}</span><small>${esc(fmtDate(t.at))} · ${esc(L(`undo possible for ${left} more ${left === 1 ? 'day' : 'days'}`, `يمكن التراجع خلال ${left} يوم`))}</small></span>
+          <button type="button" data-pmundo="${esc(t.id)}">${esc(L('Undo', 'تراجع'))}</button></li>`; }).join('')}</ul>`
+      : `<p class="empty">${esc(L('No changes yet. Trimmed, replaced and deleted photos show here for 30 days.', 'لا توجد تغييرات بعد. تظهر هنا الصور المقصوصة والمستبدلة والمحذوفة لمدة 30 يومًا.'))}</p>`;
+  } else {
+    const shown = list.slice(0, pm.shown);
+    const tools = pm.view === 'card' && dups ? `<button type="button" class="more" data-pmmerge>${esc(L(`Merge duplicate business cards (${dups} extra ${dups === 1 ? 'copy' : 'copies'})`, `دمج بطاقات العمل المكررة (${dups} نسخة زائدة)`))}</button>`
+      : pm.view === 'unused' && list.length ? `<button type="button" class="more" data-pmdelall>${esc(L(`Delete all unused (${list.length})`, `حذف كل غير المستخدمة (${list.length})`))}</button>` : '';
+    const empty = pm.view === 'unused' ? (pm.files === null ? L('Loading…', 'جارٍ التحميل…') : pm.filesErr ? L("Couldn't load the file list. Check the connection and try again.", 'تعذّر تحميل قائمة الملفات. تحقق من الاتصال وحاول مرة أخرى.') : L('No unused files. Everything stored is used by a product or supplier.', 'لا توجد ملفات غير مستخدمة. كل الملفات مستخدمة في منتج أو مورّد.'))
+      : L('No photos match.', 'لا توجد صور مطابقة.');
+    main = `${pm.view !== 'unused' ? `<div class="pmfilters"><select id="pmSup" aria-label="${esc(L('Supplier', 'المورّد'))}"><option value="">${esc(L('All suppliers', 'كل الموردين'))}</option>${sups.map(([k, n]) => `<option value="${esc(k)}"${k === pm.sup ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+        <input id="pmQ" type="search" autocomplete="off" placeholder="${esc(L('Search product or supplier', 'ابحث عن منتج أو مورّد'))}" value="${esc(pm.q)}" aria-label="${esc(L('Search', 'بحث'))}"></div>` : `<p class="hint" style="margin:0">${esc(L('Files stored online that no product or supplier uses (mostly extra copies of business cards). Deleting them frees space; they can be undone for 30 days.', 'ملفات محفوظة لا يستخدمها أي منتج أو مورّد (غالبًا نسخ إضافية من بطاقات العمل). حذفها يوفّر مساحة، ويمكن التراجع خلال 30 يومًا.'))}</p>`}
+      ${tools}
+      ${shown.length ? `<div class="pmgrid">${shown.map(it => { const nm = it.kind === 'unused' ? it.path.split('/')[0] : it.info.name;
+        return `<button type="button" class="pmcell" data-pm="${esc(it.path)}"><img data-pmimg="${esc(it.path)}" alt="" decoding="async"><span class="pmcap" dir="auto">${esc(nm || '—')}</span>${it.uses.length > 1 ? `<span class="pmn">×${it.uses.length}</span>` : ''}</button>`; }).join('')}</div>` : `<p class="empty">${esc(empty)}</p>`}
+      ${list.length > shown.length ? `<button type="button" class="more" data-pmmore>${esc(L(`Show more (${list.length - shown.length} left)`, `عرض المزيد (متبقٍ ${list.length - shown.length})`))}</button>` : ''}`;
+  }
+  const unusedCount = pm.files ? (pm.files || []).filter(f => !items.has(f.name) && !pmTrash.some(t => t.old === f.name)).length : null;
+  $('pmBody').innerHTML = `<div class="pmtabs" role="group" aria-label="${esc(L('Show', 'عرض'))}">${tab('photo', 'Product photos', 'صور المنتجات', ph)}${tab('card', 'Business cards', 'بطاقات العمل', cd)}${tab('unused', 'Unused', 'غير مستخدمة', unusedCount)}${tab('changed', 'Changes', 'التغييرات', pmTrash.length)}</div>${main}`;
+  const want = pm.view === 'changed' ? pmTrash.flatMap(t => [t.old, t.neu]) : list.slice(0, pm.shown).map(it => it.path);
+  pmWant(want);
+}
+function pmSheetHTML(it){
+  const info = it.kind === 'unused' ? {name: it.path, sup: '', card: null} : pmInfo(it);
+  const prodUses = it.uses.filter(u => u.c), regUses = it.uses.filter(u => u.r);
+  const canMain = it.kind === 'photo' && it.uses.some(u => u.f === 'imgs' && u.i > 0);
+  const usesHTML = it.kind === 'unused' ? `<p class="hint" style="margin:0">${esc(L('Not used by any product or supplier.', 'غير مستخدمة في أي منتج أو مورّد.'))}</p>`
+    : `<div class="pmuses">${[...new Map(prodUses.map(u => [u.c, u])).values()].map(u => { const c = pmCard(u.c); return c ? `<button type="button" data-pmgo="${esc(c.id)}" dir="auto">${esc(pname(c))}</button>` : ''; }).join('')}${regUses.length ? `<span class="hint" style="margin:0;align-self:center">${esc(L('Supplier card', 'بطاقة المورّد'))}</span>` : ''}</div>`;
+  return `<div class="pmtop"><button type="button" data-pmclose>${esc(L('Close', 'إغلاق'))}</button><b dir="auto">${esc(it.kind === 'card' ? L('Business card', 'بطاقة عمل') : it.kind === 'unused' ? L('Unused file', 'ملف غير مستخدم') : L('Product photo', 'صورة منتج'))}</b></div>
+    <img class="pmbig" id="pmBig" alt="">
+    <p class="pmname" dir="auto">${esc(info.name)}${info.sup && info.sup !== info.name ? ` · ${esc(info.sup)}` : ''}</p>
+    ${it.kind !== 'unused' ? `<p class="hint" style="margin:0">${esc(L(it.uses.length > 1 ? `Used in ${it.uses.length} places. A change here updates all of them.` : 'Used in 1 place.', it.uses.length > 1 ? `مستخدمة في ${it.uses.length} مواضع. أي تعديل هنا يحدّثها كلها.` : 'مستخدمة في موضع واحد.'))}</p>` : ''}
+    ${usesHTML}
+    <div class="pmacts">${it.kind !== 'unused' ? `<button type="button" class="primary" data-pmtrim>${esc(L('Trim or rotate', 'قص أو تدوير'))}</button><button type="button" data-pmreplace>${esc(L('Replace', 'استبدال'))}</button>${canMain ? `<button type="button" data-pmmain>${esc(L('Make main photo', 'اجعلها الصورة الرئيسية'))}</button>` : ''}`
+      : `<button type="button" class="del" data-pmdel>${esc(L('Delete', 'حذف'))}</button>`}</div>
+    <p class="dtmsg" id="pmMsg" hidden></p>`;
+}
+async function pmOpen(path){
+  const items = pmItems(), gone = new Set(pmTrash.map(t => t.old));
+  const it = items.get(path) || (pm.files || []).filter(f => f.name === path && !gone.has(f.name)).map(f => ({path: f.name, kind: 'unused', uses: []}))[0];
+  if (!it) { pmClose(); renderPhotos(); return; }
+  pm.open = path;
+  const sh = $('pmSheet'); sh.innerHTML = pmSheetHTML(it); sh.hidden = false; document.documentElement.style.overflow = 'hidden';
+  try { const u = await pmOrigUrl(path); if (pm.open === path && u) $('pmBig').src = u; } catch(e) {}
+}
+function pmClose(){ pm.open = null; $('pmSheet').hidden = true; $('pmSheet').innerHTML = ''; document.documentElement.style.overflow = ''; }
+function pmMsg(t, bad){ const el = $('pmMsg'); if (!el) { if (t) toast(t); return; } el.textContent = t; el.className = 'dtmsg' + (bad ? ' bad' : ''); el.hidden = !t; }
+async function openPhotos(){
+  if (window.APP_IS_GUEST) return;
+  pm.shown = PM_PAGE; renderPhotos(); showPage('photos');
+  pmPurge();
+  if (pm.files === null) { await pmLoadFiles(); if (!$('pmPage').hidden && !pm.open) renderPhotos(); }
+}
+function pmGo(id){
+  const c = pmCard(id); if (!c) return;
+  pmClose();
+  dbQ = ''; $('dbQ').value = ''; dbCat = '';
+  if (c.archived && !showArch) showArch = true;
+  idx = Math.max(0, viewCards().findIndex(x => x.id === id)); renderGallery(); setList(true);
+}
+const pmBusy = async (fn, working) => {
+  if (pm.busy) return; pm.busy = true; pmMsg(working || L('Saving…', 'جارٍ الحفظ…'));
+  try { await fn(); } catch(e) { pmMsg(L("Couldn't save the photo. Check the connection and try again.", 'تعذّر حفظ الصورة. تحقق من الاتصال وحاول مرة أخرى.'), true); }
+  finally { pm.busy = false; }
+};
+
+$('goPhotos').addEventListener('click', openPhotos);
+$('pmHome').addEventListener('click', () => { pmClose(); showPage('home'); });
+$('pmBody').addEventListener('click', async e => {
+  const v = e.target.closest('[data-pmview]');
+  if (v) { pm.view = v.dataset.pmview; pm.shown = PM_PAGE; pm.sup = ''; renderPhotos(); if (pm.view === 'unused' && pm.files === null) { await pmLoadFiles(); renderPhotos(); } return; }
+  if (e.target.closest('[data-pmmore]')) { pm.shown += PM_PAGE; renderPhotos(); return; }
+  const cell = e.target.closest('[data-pm]'); if (cell) { pmOpen(cell.dataset.pm); return; }
+  const u = e.target.closest('[data-pmundo]');
+  if (u) { u.disabled = true; try { await pmUndo(u.dataset.pmundo); toast(L('Undone', 'تم التراجع')); } catch(err) { toast(L("Couldn't undo. Check the connection and try again.", 'تعذّر التراجع. تحقق من الاتصال وحاول مرة أخرى.')); } renderPhotos(); return; }
+  const mg = e.target.closest('[data-pmmerge]');
+  if (mg) {
+    if (!mg.dataset.confirm) { mg.dataset.confirm = '1'; mg.textContent = L('Tap again to merge', 'اضغط مرة أخرى للدمج'); return; }
+    mg.disabled = true; mg.textContent = L('Merging…', 'جارٍ الدمج…');
+    try { const n = await pmMerge(); toast(L(`${n} duplicate ${n === 1 ? 'card' : 'cards'} removed. Undo is in Changes.`, `أُزيلت ${n} بطاقة مكررة. يمكن التراجع من «التغييرات».`)); } catch(err) { toast(L("Couldn't merge. Check the connection and try again.", 'تعذّر الدمج. تحقق من الاتصال وحاول مرة أخرى.')); }
+    renderPhotos(); return;
+  }
+  const da = e.target.closest('[data-pmdelall]');
+  if (da) {
+    if (!da.dataset.confirm) { da.dataset.confirm = '1'; da.textContent = L('Tap again to delete them all', 'اضغط مرة أخرى لحذفها كلها'); return; }
+    const items = pmItems(), list = pmList(items); pmDelete(list.map(x => x.path), L('Unused file', 'ملف غير مستخدم'));
+    toast(L(`${list.length} unused ${list.length === 1 ? 'file' : 'files'} deleted. Undo is in Changes.`, `حُذف ${list.length} ملف غير مستخدم. يمكن التراجع من «التغييرات».`)); renderPhotos(); return;
+  }
+});
+$('pmBody').addEventListener('change', e => { if (e.target.id === 'pmSup') { pm.sup = e.target.value; pm.shown = PM_PAGE; renderPhotos(); } });
+$('pmBody').addEventListener('input', debounce(e => { if (e.target.id === 'pmQ') { pm.q = e.target.value; pm.shown = PM_PAGE; renderPhotos(); const q = $('pmQ'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } } }, 250));
+$('pmSheet').addEventListener('click', async e => {
+  if (e.target.closest('[data-pmclose]')) { pmClose(); renderPhotos(); return; }
+  const go = e.target.closest('[data-pmgo]'); if (go) { pmGo(go.dataset.pmgo); return; }
+  const path = pm.open; if (!path) return;
+  const it = pmItems().get(path);
+  if (e.target.closest('[data-pmtrim]') && it) {
+    await pmBusy(async () => { const neu = await pmTrimIt(it); if (neu) { toast(L('Photo trimmed. Undo is in Changes.', 'تم قص الصورة. يمكن التراجع من «التغييرات».')); pmClose(); renderPhotos(); } else pmMsg(''); }, L('Opening the photo…', 'جارٍ فتح الصورة…'));
+    return;
+  }
+  if (e.target.closest('[data-pmreplace]') && it) { $('pmFile').value = ''; $('pmFile').click(); return; }
+  if (e.target.closest('[data-pmmain]') && it) { const n = pmMakeMain(it); toast(n ? L('Now the main photo', 'أصبحت الصورة الرئيسية') : L('Already the main photo', 'هي الصورة الرئيسية بالفعل')); pmOpen(path); return; }
+  const del = e.target.closest('[data-pmdel]');
+  if (del && !it) {
+    if (!del.dataset.confirm) { del.dataset.confirm = '1'; del.textContent = L('Tap again to delete', 'اضغط مرة أخرى للحذف'); return; }
+    pmDelete([path], L('Unused file', 'ملف غير مستخدم')); toast(L('Deleted. Undo is in Changes.', 'تم الحذف. يمكن التراجع من «التغييرات».')); pmClose(); renderPhotos();
+  }
+});
+$('pmFile').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0], path = pm.open, it = path && pmItems().get(path);
+  if (!f || !it) return;
+  await pmBusy(async () => { const neu = await pmReplaceIt(it, f); if (neu) { toast(L('Photo replaced. Undo is in Changes.', 'تم استبدال الصورة. يمكن التراجع من «التغييرات».')); pmClose(); renderPhotos(); } else pmMsg(''); });
+});
+updatePmTile();
+
 
 // Saved order page: a line showing what was paid through the agent
 function agBillNote(b){
