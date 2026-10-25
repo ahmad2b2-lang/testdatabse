@@ -3160,11 +3160,11 @@ function updateExpTile(){
   t.textContent = n ? L(`${n} ${n === 1 ? 'expense' : 'expenses'} · ${expMoney(tot, exp.cur)}`, `${n} مصروف · ${expMoney(tot, exp.cur)}`) : L('Record trip purchases and see the totals', 'سجّل مشتريات الرحلة واعرف الإجمالي');
 }
 function expFormHTML(e, isEdit = !!e){
-  const v = e || {desc: '', person: 'ahmad', paidBy: 'ahmad', cat: 'food', catText: '', amount: '', cur: 'RMB', date: todayISO(), loc: ''};
+  const v = e || {desc: '', person: 'shared', paidBy: 'ahmad', cat: 'food', catText: '', amount: '', cur: 'RMB', date: todayISO(), loc: ''};
   const locs = [...new Set(spendItems().map(x => (x.loc || '').trim()).filter(Boolean))];
   return `<div class="formhead"><p class="eyebrow">${esc(isEdit ? L('Edit expense', 'تعديل المصروف') : L('Add expense', 'إضافة مصروف'))}</p></div>
     <div class="field"><label for="eDesc">${esc(L('Purchase description', 'وصف المشتريات'))} <span class="req" aria-hidden="true">*</span></label><input id="eDesc" autocomplete="off" dir="auto" value="${esc(v.desc)}"><p class="fielderr" id="eDescErr" hidden>${esc(L('Enter what was bought.', 'أدخل ما تم شراؤه.'))}</p></div>
-    <div class="field"><span class="slbl" style="font-size:.82rem;font-weight:600">${esc(L('Purchased by', 'اشتراها'))}</span><div class="pseg" role="group" aria-label="${esc(L('Purchased by', 'اشتراها'))}">${PERSONS.map(k => `<button type="button" data-eperson="${k}" aria-pressed="${k === v.person}">${esc(personName(k))}</button>`).join('')}</div></div>
+    <p class="hint" style="margin:0">${esc(L('All expenses are shared costs.', 'جميع المصاريف مشتركة.'))}</p>
     <div class="field"><span class="slbl" style="font-size:.82rem;font-weight:600">${esc(L('Paid by', 'دفعها'))}</span><div class="pseg two" role="group" aria-label="${esc(L('Paid by', 'دفعها'))}">${PAYERS.map(k => `<button type="button" data-epaid="${k}" aria-pressed="${k === v.paidBy}">${esc(personName(k))}</button>`).join('')}</div>
       <p class="hint">${esc(L('Who handed over the money. Used to work out who owes whom.', 'من دفع المبلغ فعليًا. يُستخدم لحساب من يدين لمن.'))}</p><p class="fielderr" id="ePaidErr" hidden>${esc(L('Choose who paid.', 'اختر من دفع.'))}</p></div>
     <div class="grid2">
@@ -3179,14 +3179,14 @@ function expFormHTML(e, isEdit = !!e){
     <div class="btns"><button type="submit" class="primary">${esc(isEdit ? L('Update expense', 'تحديث المصروف') : L('Add expense', 'إضافة مصروف'))}</button>${isEdit ? `<button type="button" id="eCancel">${esc(L('Cancel', 'إلغاء'))}</button>` : ''}</div>`;
 }
 function readExpForm(){
-  const person = (document.querySelector('[data-eperson][aria-pressed="true"]') || {}).dataset?.eperson || 'ahmad';
+  const person = 'shared';   // all trip costs are shared
   const paidBy = (document.querySelector('[data-epaid][aria-pressed="true"]') || {}).dataset?.epaid || '';
   return {desc: $('eDesc').value.trim(), person, paidBy, cat: $('eCat').value, catText: $('eCatText').value.trim(), amount: $('eAmount').value.trim(), cur: $('eCur').value, date: $('eDate').value || todayISO(), loc: $('eLoc').value.trim()};
 }
 function expCatLabel(x){ return x.cat === 'other' && x.catText ? x.catText : catName(x.cat); }
 function renderExpTop(){
   const all = spendItems(), cur = exp.cur, val = x => expIn(x.amount, x.cur, cur) || 0;
-  const list = expFilter === 'all' ? all : all.filter(x => x.person === expFilter);
+  expFilter = 'all'; const list = all;
   const total = list.reduce((a, x) => a + val(x), 0);
   const per = Object.fromEntries(PERSONS.map(k => [k, all.filter(x => x.person === k).reduce((a, x) => a + val(x), 0)]));
   const cnt = Object.fromEntries(PERSONS.map(k => [k, all.filter(x => x.person === k).length]));
@@ -3194,10 +3194,10 @@ function renderExpTop(){
   const catRows = Object.entries(cats).sort((a, b) => b[1] - a[1]), max = catRows.length ? catRows[0][1] : 0;
   $('expTop').innerHTML = `
     <div class="cmprow"><div class="seg" role="group" aria-label="${esc(L('Currency', 'العملة'))}">${['SAR', 'USD', 'RMB'].map(x => `<button type="button" data-ecur="${x}" aria-pressed="${x === cur}">${x}</button>`).join('')}</div>
-      <div class="chips" role="group" aria-label="${esc(L('Show expenses of', 'عرض مصاريف'))}"><button type="button" data-efilter="all" aria-pressed="${expFilter === 'all'}">${esc(L('All', 'الكل'))}</button>${PERSONS.map(k => `<button type="button" data-efilter="${k}" aria-pressed="${expFilter === k}">${esc(personName(k))}</button>`).join('')}</div></div>
+      </div>
     <div class="exptotal"><small>${esc(expFilter === 'all' ? L('Total spent', 'إجمالي المصاريف') : L(`Spent by ${personName(expFilter)}`, `مصاريف ${personName(expFilter)}`))}</small><b>${expMoney(total, cur)}</b><span>${esc(L(`${list.length} ${list.length === 1 ? 'expense' : 'expenses'}`, `${list.length} مصروف`))}</span></div>
-    <div class="persons">${PERSONS.map(k => `<button type="button" data-efilter="${k}" aria-pressed="${expFilter === k}"><small>${esc(personName(k))}</small><b>${expMoney(per[k], cur)}</b><em>${esc(L(`${cnt[k]} ${cnt[k] === 1 ? 'expense' : 'expenses'}`, `${cnt[k]} مصروف`))}</em></button>`).join('')}</div>
-    ${expFilter === 'all' && per.shared ? `<p class="splitnote">${esc(L(`If shared costs are split equally: Ahmad ${expMoney(per.ahmad + per.shared / 2, cur)}, Father ${expMoney(per.father + per.shared / 2, cur)}.`, `إذا قُسّمت المصاريف المشتركة بالتساوي: أحمد ${expMoney(per.ahmad + per.shared / 2, cur)}، الوالد ${expMoney(per.father + per.shared / 2, cur)}.`))}</p>` : ''}
+    <!-- every expense is a shared cost: no per-person totals -->
+
     ${expFilter === 'all' ? settleHTML(cur) : ''}
     ${catRows.length ? `<div class="panel" style="gap:10px"><p class="eyebrow">${esc(L('By category', 'حسب الفئة'))}</p><ul class="catbars">${catRows.map(([k, v]) => `<li><span dir="auto">${esc(k)}</span><span class="bar"><i style="width:${max ? Math.max(2, v / max * 100) : 0}%"></i></span><b>${expMoney(v, cur)}</b></li>`).join('')}</ul></div>` : ''}
     ${exp.items.length ? `<button type="button" class="suppdf" id="expPdf"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>${esc(L(`Export PDF in Arabic (${all.length} ${all.length === 1 ? 'expense' : 'expenses'})`, `تصدير PDF بالعربية (${all.length} مصروف)`))}</button>` : ''}`;
@@ -3229,7 +3229,7 @@ function renderExpList(){
     ${xs.map(x => isSettle(x) ? `<div class="erow srow" data-eid="${esc(x.id)}"><div style="display:grid;gap:4px;min-width:0"><span class="ed">${esc(L(`${personName(x.from)} paid ${personName(x.to)} back`, `${personName(x.from)} سدّد ${toAr(personName(x.to))}`))}</span>
       <span class="em">${esc(L('Settlement', 'تسوية'))}</span></div><div class="ea">${expMoney(num(x.amount), x.cur)}</div>
       <div class="eact"><button type="button" class="del" data-edel>${esc(L('Delete', 'حذف'))}</button></div></div>` : `<div class="erow" data-eid="${esc(x.id)}"><div style="display:grid;gap:4px;min-width:0"><span class="ed" dir="auto">${esc(x.desc)}</span>
-      <span class="em"><span class="pill p-${x.person}">${esc(personName(x.person))}</span><span dir="auto">${esc(expCatLabel(x))}</span>${x.loc ? `<span>·</span><span dir="auto">${esc(x.loc)}</span>` : ''}</span>
+      <span class="em"><span dir="auto">${esc(expCatLabel(x))}</span>${x.loc ? `<span>·</span><span dir="auto">${esc(x.loc)}</span>` : ''}</span>
       ${PAYERS.includes(x.paidBy) ? `<span class="em">${esc(L('Paid by', 'دفعها'))} <span class="paid">${esc(personName(x.paidBy))}</span></span>`
         : `<span class="em nopaid">${esc(L('Who paid?', 'من دفع؟'))}${PAYERS.map(k => `<button type="button" data-setpaid="${k}">${esc(personName(k))}</button>`).join('')}</span>`}</div>
       <div class="ea">${expMoney(num(x.amount), x.cur)}${x.cur !== cur ? `<small>≈ ${expMoney(expIn(x.amount, x.cur, cur), cur)}</small>` : ''}</div>
@@ -3353,39 +3353,19 @@ async function renderExpensePages(onProgress){
     Lx(ctx, `${all.length} مصروف`, M + 30, y + 36, F(600, 28), FG);
     if (period) Lx(ctx, period, M + 30, y + 82, F(500, 22), MUT);
   }});
-  // per person
-  const bw = (W - 2 * M - 40) / 3;
-  bl.push({h: 150, draw: (ctx, y) => PERSONS.forEach((k, i) => {
-    const r = M + i * (bw + 20);
-    ctx.strokeStyle = LINE; ctx.lineWidth = 2; rrect(ctx, W - r - bw, y, bw, 128, 16); ctx.stroke();
-    R(ctx, PN[k], r + 24, y + 20, F(600, 24), MUT);
-    R(ctx, money(per[k], cur), r + 24, y + 54, F(700, 34), FG);
-    R(ctx, `${cnt[k]} مصروف`, r + 24, y + 96, F(500, 20), MUT);
-  })});
-  if (per.shared) {
-    const ls = lines(`إذا قُسّمت المصاريف المشتركة بالتساوي: أحمد ${money(per.ahmad + per.shared / 2, cur)}، الوالد ${money(per.father + per.shared / 2, cur)}.`, F(500, 22), W - 2 * M, 2);
-    bl.push({h: ls.length * 32 + 22, draw: (ctx, y) => ls.forEach((l, k) => R(ctx, l, M, y + k * 32, F(500, 22), FG))});
-  }
-  // settlement
-  if (exp.items.length) {
-    const owe = Math.abs(st.bal) >= 0.005, debtor = st.bal > 0 ? 'father' : 'ahmad', creditor = st.bal > 0 ? 'ahmad' : 'father';
-    const started = st.counted || exp.items.some(isSettle), miss = st.missing.length;
-    const line = !started ? 'لم يُحدَّد بعد من دفع الفواتير.' : owe ? `${PN[debtor]} يدين ${toAr(PN[creditor])} بمبلغ ${money(Math.abs(st.bal), cur)}` : 'لا توجد مستحقات: الحساب متساوٍ.';
-    const boxH = 262 + (miss ? 40 : 0) + 52;
-    bl.push({h: boxH + 26, draw: (ctx, y) => {
-      ctx.strokeStyle = owe ? BAD : LINE; ctx.lineWidth = 2; rrect(ctx, M, y, W - 2 * M, boxH, 18); ctx.stroke();
-      R(ctx, 'التسوية', M + 30, y + 22, F(600, 22), MUT);
-      R(ctx, line, M + 30, y + 58, F(700, 32), owe ? BAD : started ? GOOD : MUT);
+  // who paid what (no "who owes whom": all costs are shared)
+  if (all.length) {
+    const pc = {ahmad: 0, father: 0}; for (const x of all) if (PAYERS.includes(x.paidBy)) pc[x.paidBy]++;
+    const bw2 = (W - 2 * M - 20) / 2;
+    bl.push({h: 196, draw: (ctx, y) => {
+      R(ctx, 'المدفوعات', M, y, F(700, 28), FG);
       PAYERS.forEach((k, i) => {
-        const r = M + 30 + i * ((W - 2 * M - 60) / 2); let yy = y + 118;
-        R(ctx, PN[k], r, yy, F(600, 26), FG); yy += 40;
-        R(ctx, `دفع: ${money(st.paid[k], cur)}`, r, yy, F(500, 22), FG); yy += 32;
-        R(ctx, `حصته: ${money(st.share[k], cur)}`, r, yy, F(500, 22), FG); yy += 32;
-        if (st.back[k]) R(ctx, `سدّد: ${money(st.back[k], cur)}`, r, yy, F(500, 22), FG);
+        const r = M + i * (bw2 + 20);
+        ctx.strokeStyle = LINE; ctx.lineWidth = 2; rrect(ctx, W - r - bw2, y + 48, bw2, 124, 16); ctx.stroke();
+        R(ctx, `دفعها ${PN[k]}`, r + 24, y + 66, F(600, 24), MUT);
+        R(ctx, money(st.paid[k], cur), r + 24, y + 98, F(700, 34), FG);
+        Lx(ctx, `${pc[k]} مصروف`, W - r - bw2 + 24, y + 70, F(500, 20), MUT);
       });
-      let yy = y + 262;
-      if (miss) { R(ctx, `${miss} مصروف بدون تحديد من دفع، لذلك لم يُحتسب في التسوية.`, M + 30, yy, F(600, 21), BAD); yy += 40; }
-      R(ctx, 'تُقسَّم المصاريف المشتركة بالتساوي بين أحمد والوالد.', M + 30, yy, F(500, 20), MUT);
     }});
   }
   // by category
@@ -3402,24 +3382,24 @@ async function renderExpensePages(onProgress){
     }});
   }
   {
-    const ls = lines(`المبالغ معروضة بعملة ${curName}، والتحويل بأسعار الصرف في التطبيق: 1 دولار = ${rates.usd} يوان = ${rates.sar} ريال.`, F(500, 20), W - 2 * M, 3);
+    const ls = lines(`جميع المصاريف مشتركة. المبالغ معروضة بعملة ${curName}، والتحويل بأسعار الصرف في التطبيق: 1 دولار = ${rates.usd} يوان = ${rates.sar} ريال.`, F(500, 20), W - 2 * M, 3);
     bl.push({h: ls.length * 30 + 30, draw: (ctx, y) => ls.forEach((l, k) => R(ctx, l, M, y + k * 30, F(500, 20), MUT))});
   }
-  // expense table, right to left: description, category, bought by, paid by, location, amount
-  const COLS = [['الوصف', 330], ['الفئة', 160], ['اشتراها', 110], ['دفعها', 110], ['الموقع', 170], ['المبلغ', 220]];
+  // expense table, right to left: description, category, paid by, location, amount
+  const COLS = [['الوصف', 440], ['الفئة', 160], ['دفعها', 110], ['الموقع', 170], ['المبلغ', 220]];
   const colR = []; { let r = M; for (const [, w] of COLS) { colR.push(r + 10); r += w; } }
   const thead = {h: 52, draw: (ctx, y) => { COLS.forEach(([t], i) => R(ctx, t, colR[i], y + 12, F(600, 20), MUT)); hline(ctx, y + 48, 2.5, FG); }};
   const rowBlock = x => {
     const settle = isSettle(x), fD = F(500, 22), unpaid = !settle && !PAYERS.includes(x.paidBy);
-    const cells = settle ? [lines(`${PN[x.from] || ''} سدّد ${toAr(PN[x.to] || '')}`, F(600, 22), 310, 2), ['تسوية'], ['—'], ['—'], ['—']]
-      : [lines(x.desc, fD, 310, 3), lines(catL(x), fD, 145, 2), [PN[x.person] || '—'], [unpaid ? 'غير محدد' : PN[x.paidBy]], lines(x.loc || '—', fD, 155, 2)];
+    const cells = settle ? [lines(`${PN[x.from] || ''} سدّد ${toAr(PN[x.to] || '')}`, F(600, 22), 420, 2), ['تسوية'], ['—'], ['—']]
+      : [lines(x.desc, fD, 420, 3), lines(catL(x), fD, 145, 2), [unpaid ? 'غير محدد' : PN[x.paidBy]], lines(x.loc || '—', fD, 155, 2)];
     const amt = money(num(x.amount), x.cur), conv = x.cur !== cur ? '≈ ' + money(val(x), cur) : '';
     const h = Math.max(...cells.map(c => c.length), conv ? 2 : 1) * 30 + 26;
     return {h, tbl: true, draw: (ctx, y) => {
       if (settle) { ctx.fillStyle = '#eef6f0'; ctx.fillRect(M, y, W - 2 * M, h); }
-      cells.forEach((ls, i) => ls.forEach((l, k) => R(ctx, l, colR[i], y + 13 + k * 30, i === 0 && settle ? F(600, 22) : fD, i === 3 && unpaid ? BAD : i === 1 && settle ? GOOD : FG)));
-      R(ctx, amt, colR[5], y + 13, F(700, 22), FG);
-      if (conv) R(ctx, conv, colR[5], y + 43, F(500, 19), MUT);
+      cells.forEach((ls, i) => ls.forEach((l, k) => R(ctx, l, colR[i], y + 13 + k * 30, i === 0 && settle ? F(600, 22) : fD, i === 2 && unpaid ? BAD : i === 1 && settle ? GOOD : FG)));
+      R(ctx, amt, colR[4], y + 13, F(700, 22), FG);
+      if (conv) R(ctx, conv, colR[4], y + 43, F(500, 19), MUT);
       hline(ctx, y + h);
     }};
   };
