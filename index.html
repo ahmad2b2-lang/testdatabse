@@ -722,14 +722,6 @@ document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'a
         <circle cx="125" cy="62" r="1.4" fill="#263238"/>
       </svg>
     </figure>
-    <button type="button" class="tile primary" id="goAdd">
-      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
-      <span><strong>إضافة منتج جديد</strong><small>أدخل البيانات والصور وبطاقة المورّد</small></span>
-    </button>
-    <button type="button" class="tile adminonly" id="goAlbums">
-      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h11a3 3 0 0 1 3 3v11"/><circle cx="8.5" cy="11" r="1.6"/><path d="M3 17l4.5-4 4 3.5 2-1.5 3.5 3"/></svg></span>
-      <span><strong>ألبومات الصور</strong><small id="albumsTileN">صوّر المنتجات الآن وأضفها لاحقًا</small></span>
-    </button>
     <button type="button" class="tile" id="goDb">
       <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>
       <span><strong>قاعدة بيانات المنتجات</strong><small id="dbCount">تصفّح المنتجات المحفوظة</small></span>
@@ -737,6 +729,26 @@ document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'a
     <button type="button" class="tile" id="goSup">
       <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V9l6 3V9l6 3V5h6v16z"/><path d="M7 17h2M12 17h2M17 17h1"/></svg></span>
       <span><strong>قاعدة بيانات الموردين</strong><small id="supCount">المنتجات مجمّعة حسب المورّد</small></span>
+    </button>
+    <button type="button" class="tile adminonly" id="goAgent">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M2.5 19c.6-3 2.8-5 5.5-5s4.9 2 5.5 5"/><path d="M15 6h6M15 6l2-2M21 6l-2 2M21 13h-6M21 13l-2-2M15 13l2 2"/></svg></span>
+      <span><strong>حساب الوكيل</strong><small id="agTileN">المبالغ المحوّلة ومدفوعات الوكيل والرصيد</small></span>
+    </button>
+    <button type="button" class="tile" id="goBills">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></span>
+      <span><strong>الطلبات المحفوظة</strong><small id="billsTileN">ملخصات الطلبات المحفوظة من السلة</small></span>
+    </button>
+    <button type="button" class="tile" id="goShop">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6"/></svg></span>
+      <span><strong>أضف إلى السلة</strong><small id="cartTileN">تصفّح المنتجات وأنشئ ملخص طلب</small></span>
+    </button>
+    <button type="button" class="tile primary" id="goAdd">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+      <span><strong>إضافة منتج جديد</strong><small>أدخل البيانات والصور وبطاقة المورّد</small></span>
+    </button>
+    <button type="button" class="tile adminonly" id="goAlbums">
+      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h11a3 3 0 0 1 3 3v11"/><circle cx="8.5" cy="11" r="1.6"/><path d="M3 17l4.5-4 4 3.5 2-1.5 3.5 3"/></svg></span>
+      <span><strong>ألبومات الصور</strong><small id="albumsTileN">صوّر المنتجات الآن وأضفها لاحقًا</small></span>
     </button>
     <button type="button" class="tile" id="goCalc">
       <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h2M16 15v3"/></svg></span>
@@ -746,21 +758,9 @@ document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'a
       <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 21h14"/><path d="M12 6H5l-2.5 6a3 3 0 0 0 5 0L5 6M12 6h7l-2.5 6a3 3 0 0 0 5 0L19 6"/></svg></span>
       <span><strong>مقارنة المنتجات</strong><small>فرق التكلفة بين مورّدين</small></span>
     </button>
-    <button type="button" class="tile" id="goShop">
-      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6"/></svg></span>
-      <span><strong>أضف إلى السلة</strong><small id="cartTileN">تصفّح المنتجات وأنشئ ملخص طلب</small></span>
-    </button>
-    <button type="button" class="tile" id="goBills">
-      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></span>
-      <span><strong>الطلبات المحفوظة</strong><small id="billsTileN">ملخصات الطلبات المحفوظة من السلة</small></span>
-    </button>
     <button type="button" class="tile" id="goExp">
       <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 13.5L3 11l1.5-1.5 8 .5 4.5-4.5a2 2 0 0 1 3 3L15.5 13l.5 8L14.5 22.5 12 15"/><path d="M5 19l3-3"/></svg></span>
       <span><strong>سجل مصاريف السفر</strong><small id="expTileN">سجّل مشتريات الرحلة واعرف الإجمالي</small></span>
-    </button>
-    <button type="button" class="tile adminonly" id="goAgent">
-      <span class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M2.5 19c.6-3 2.8-5 5.5-5s4.9 2 5.5 5"/><path d="M15 6h6M15 6l2-2M21 6l-2 2M21 13h-6M21 13l-2-2M15 13l2 2"/></svg></span>
-      <span><strong>حساب الوكيل</strong><small id="agTileN">المبالغ المحوّلة ومدفوعات الوكيل والرصيد</small></span>
     </button>
     <div class="datatools">
       <p class="eyebrow">النسخ الاحتياطي والنقل</p>
