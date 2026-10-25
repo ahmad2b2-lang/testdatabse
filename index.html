@@ -3339,7 +3339,7 @@ async function renderExpensePages(onProgress){
   const cats = {}; for (const x of all) { const k = catL(x); cats[k] = (cats[k] || 0) + (val(x) || 0); }
   const catRows = Object.entries(cats).sort((a, b) => b[1] - a[1]);
   const dates = exp.items.map(x => x.date).filter(Boolean).sort();
-  const sorted = exp.items.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.created || '').localeCompare(b.created || ''));
+  const sorted = all.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.created || '').localeCompare(b.created || ''));
   const days = []; for (const x of sorted) { const d = x.date || ''; if (!days.length || days[days.length - 1].d !== d) days.push({d, xs: []}); days[days.length - 1].xs.push(x); }
   const st = settlement(cur);
 
@@ -3353,21 +3353,6 @@ async function renderExpensePages(onProgress){
     Lx(ctx, `${all.length} مصروف`, M + 30, y + 36, F(600, 28), FG);
     if (period) Lx(ctx, period, M + 30, y + 82, F(500, 22), MUT);
   }});
-  // who paid what (no "who owes whom": all costs are shared)
-  if (all.length) {
-    const pc = {ahmad: 0, father: 0}; for (const x of all) if (PAYERS.includes(x.paidBy)) pc[x.paidBy]++;
-    const bw2 = (W - 2 * M - 20) / 2;
-    bl.push({h: 196, draw: (ctx, y) => {
-      R(ctx, 'المدفوعات', M, y, F(700, 28), FG);
-      PAYERS.forEach((k, i) => {
-        const r = M + i * (bw2 + 20);
-        ctx.strokeStyle = LINE; ctx.lineWidth = 2; rrect(ctx, W - r - bw2, y + 48, bw2, 124, 16); ctx.stroke();
-        R(ctx, `دفعها ${PN[k]}`, r + 24, y + 66, F(600, 24), MUT);
-        R(ctx, money(st.paid[k], cur), r + 24, y + 98, F(700, 34), FG);
-        Lx(ctx, `${pc[k]} مصروف`, W - r - bw2 + 24, y + 70, F(500, 20), MUT);
-      });
-    }});
-  }
   // by category
   if (catRows.length) {
     const max = catRows[0][1] || 1, h = 56 + catRows.length * 46 + 24;
@@ -3385,21 +3370,20 @@ async function renderExpensePages(onProgress){
     const ls = lines(`جميع المصاريف مشتركة. المبالغ معروضة بعملة ${curName}، والتحويل بأسعار الصرف في التطبيق: 1 دولار = ${rates.usd} يوان = ${rates.sar} ريال.`, F(500, 20), W - 2 * M, 3);
     bl.push({h: ls.length * 30 + 30, draw: (ctx, y) => ls.forEach((l, k) => R(ctx, l, M, y + k * 30, F(500, 20), MUT))});
   }
-  // expense table, right to left: description, category, paid by, location, amount
-  const COLS = [['الوصف', 440], ['الفئة', 160], ['دفعها', 110], ['الموقع', 170], ['المبلغ', 220]];
+  // expense table, right to left: description, category, location, amount (who paid is not shown)
+  const COLS = [['الوصف', 500], ['الفئة', 190], ['الموقع', 190], ['المبلغ', 220]];
   const colR = []; { let r = M; for (const [, w] of COLS) { colR.push(r + 10); r += w; } }
   const thead = {h: 52, draw: (ctx, y) => { COLS.forEach(([t], i) => R(ctx, t, colR[i], y + 12, F(600, 20), MUT)); hline(ctx, y + 48, 2.5, FG); }};
   const rowBlock = x => {
     const settle = isSettle(x), fD = F(500, 22), unpaid = !settle && !PAYERS.includes(x.paidBy);
-    const cells = settle ? [lines(`${PN[x.from] || ''} سدّد ${toAr(PN[x.to] || '')}`, F(600, 22), 420, 2), ['تسوية'], ['—'], ['—']]
-      : [lines(x.desc, fD, 420, 3), lines(catL(x), fD, 145, 2), [unpaid ? 'غير محدد' : PN[x.paidBy]], lines(x.loc || '—', fD, 155, 2)];
+    const cells = [lines(x.desc, fD, 480, 3), lines(catL(x), fD, 175, 2), lines(x.loc || '—', fD, 175, 2)];
     const amt = money(val(x), cur), conv = '';   // every amount in riyals
     const h = Math.max(...cells.map(c => c.length), conv ? 2 : 1) * 30 + 26;
     return {h, tbl: true, draw: (ctx, y) => {
       if (settle) { ctx.fillStyle = '#eef6f0'; ctx.fillRect(M, y, W - 2 * M, h); }
-      cells.forEach((ls, i) => ls.forEach((l, k) => R(ctx, l, colR[i], y + 13 + k * 30, i === 0 && settle ? F(600, 22) : fD, i === 2 && unpaid ? BAD : i === 1 && settle ? GOOD : FG)));
-      R(ctx, amt, colR[4], y + 13, F(700, 22), FG);
-      if (conv) R(ctx, conv, colR[4], y + 43, F(500, 19), MUT);
+      cells.forEach((ls, i) => ls.forEach((l, k) => R(ctx, l, colR[i], y + 13 + k * 30, i === 0 && settle ? F(600, 22) : fD, FG)));
+      R(ctx, amt, colR[3], y + 13, F(700, 22), FG);
+      if (conv) R(ctx, conv, colR[3], y + 43, F(500, 19), MUT);
       hline(ctx, y + h);
     }};
   };
@@ -3418,7 +3402,7 @@ async function renderExpensePages(onProgress){
     bl.push(thead, ...tbl);
     bl.push({h: 80, draw: (ctx, y) => {
       ctx.fillStyle = ACC; ctx.fillRect(M, y + 14, W - 2 * M, 54);
-      R(ctx, `الإجمالي (${all.length} مصروف، بدون التسويات)`, M + 14, y + 27, F(700, 24), '#ffffff');
+      R(ctx, `الإجمالي (${all.length} مصروف)`, M + 14, y + 27, F(700, 24), '#ffffff');
       Lx(ctx, money(total, cur), M + 14, y + 26, F(700, 26), '#ffffff');
     }});
   }
