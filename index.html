@@ -3325,7 +3325,7 @@ async function renderExpensePages(onProgress){
   const Lx = (ctx, t, x, y, font, color) => { ctx.font = font; ctx.fillStyle = color; ctx.direction = dirOf(t); ctx.textAlign = 'left'; ctx.fillText(t, x, y); };
   const hline = (ctx, y, w = 1.5, c = LINE) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(M, y); ctx.lineTo(W - M, y); ctx.stroke(); };
 
-  const cur = exp.cur, nf = v => Math.abs(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const cur = 'SAR', nf = v => Math.abs(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   const money = (v, c) => v === null || v === undefined || isNaN(v) ? '—' : c === 'USD' ? '$' + nf(v) : c === 'RMB' ? '¥' + nf(v) : nf(v) + ' ر.س';
   const PN = {ahmad: 'أحمد', father: 'الوالد', shared: 'مشترك'};
   const CN = {flight: 'تذاكر طيران', train: 'تذاكر قطار', taxi: 'فواتير تاكسي', food: 'طعام', hotel: 'فندق', shopping: 'تسوّق', other: 'أخرى'};
@@ -3393,7 +3393,7 @@ async function renderExpensePages(onProgress){
     const settle = isSettle(x), fD = F(500, 22), unpaid = !settle && !PAYERS.includes(x.paidBy);
     const cells = settle ? [lines(`${PN[x.from] || ''} سدّد ${toAr(PN[x.to] || '')}`, F(600, 22), 420, 2), ['تسوية'], ['—'], ['—']]
       : [lines(x.desc, fD, 420, 3), lines(catL(x), fD, 145, 2), [unpaid ? 'غير محدد' : PN[x.paidBy]], lines(x.loc || '—', fD, 155, 2)];
-    const amt = money(num(x.amount), x.cur), conv = x.cur !== cur ? '≈ ' + money(val(x), cur) : '';
+    const amt = money(val(x), cur), conv = '';   // every amount in riyals
     const h = Math.max(...cells.map(c => c.length), conv ? 2 : 1) * 30 + 26;
     return {h, tbl: true, draw: (ctx, y) => {
       if (settle) { ctx.fillStyle = '#eef6f0'; ctx.fillRect(M, y, W - 2 * M, h); }
