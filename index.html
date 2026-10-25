@@ -2996,7 +2996,18 @@ async function renderBillPages(b){
     ROWS.push({t: 'sub', g, h: 56});
   });
   ROWS.push({t: 'totals', h: 60 + 52 * (2 + (b.pct ? 1 : 0) + (b.vat ? 1 : 0) + adjRows(b.tt, b.oadjSpec).length) + 24});
-  const headH = 120 + 40 + 60 + (b.note ? 44 : 0) + 30, FOOT = 80, TH = 46;
+  // suppliers' business cards, shown in the upper section of the first page
+  const bizList = [];
+  for (const g of billGroups(b)) {
+    const c = g.lines.map(l => cards.find(x => x.id === l.pid)).find(Boolean);
+    const src = (c && bizOf(c)) || supplierCard(g.lines[0] && g.lines[0].sup);
+    if (src && !bizList.some(x => x.src === src)) bizList.push({src, name: g.name});
+  }
+  await Promise.all(bizList.map(async x => { x.img = await loadImg(x.src); }));
+  const bizShown = bizList.filter(x => x.img), PER_ROW = 3, CARD_H = 300, CAP = bizShown.length > 1 ? 34 : 0;
+  const bizRows = Math.ceil(bizShown.length / PER_ROW), bizTop = 160 + 48 + (b.note ? 50 : 0);
+  const bizH = bizRows ? bizRows * (CARD_H + CAP + 20) + 10 : 0;
+  const headH = (bizRows ? bizTop + bizH : 120 + 40 + 60 + (b.note ? 44 : 0)) + 30, FOOT = 80, TH = 46;
   const pages = [[]]; let y = headH + TH;
   ROWS.forEach((r, i) => {
     const keep = r.t === 'group' && ROWS[i + 1] ? ROWS[i + 1].h : 0;   // a supplier name never sits alone at the bottom of a page
@@ -3019,6 +3030,15 @@ async function renderBillPages(b){
       txtEnd(ctx, fmtDate(b.date), W - M, 48, `500 24px ${B}`, '#dbe8f8');
       txt(ctx, b.no, M, 160, `600 30px ${MO}`, FG);
       if (b.note) txt(ctx, b.note, M, 210, `500 26px ${B}`, MUT, W - 2 * M);
+      // business cards: up to 3 per row, each fitted inside its box without cropping
+      const n = Math.min(PER_ROW, bizShown.length), gap = 24, boxW = n ? Math.min(520, (W - 2 * M - gap * (n - 1)) / n) : 0;
+      bizShown.forEach((x, i) => {
+        const row = Math.floor(i / PER_ROW), col = i % PER_ROW, by = bizTop + row * (CARD_H + CAP + 20);
+        const sc = Math.min(boxW / x.img.width, CARD_H / x.img.height), w = x.img.width * sc, h = x.img.height * sc, bx0 = bx(M + col * (boxW + gap), w);
+        ctx.save(); rrect(ctx, bx0, by, w, h, 12); ctx.clip(); ctx.drawImage(x.img, bx0, by, w, h); ctx.restore();
+        ctx.strokeStyle = LINE; ctx.lineWidth = 1.5; rrect(ctx, bx0, by, w, h, 12); ctx.stroke();
+        if (CAP) txt(ctx, x.name, M + col * (boxW + gap), by + h + 8, `600 20px ${B}`, MUT, boxW);
+      });
       top = headH;
     }
     tableHead(ctx, top);
