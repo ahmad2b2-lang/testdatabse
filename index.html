@@ -1796,13 +1796,15 @@ function goTo(i, smooth){
 function setList(open){ showPage(open ? 'cards' : 'form'); if (open) requestAnimationFrame(() => goTo(idx)); }
 $('goAdd').addEventListener('click', () => { clearForm(); showPage('form'); });
 $('goDb').addEventListener('click', () => setList(true));
-$('goSup').addEventListener('click', () => { renderSuppliers(); showPage('sup'); });
+$('goSup').addEventListener('click', () => { showPage('sup'); renderSuppliers(true); });
 $('supHome').addEventListener('click', () => showPage('home'));
-$('supSearch').addEventListener('input', renderSuppliers);
+// search waits for a short pause in typing, so the list is not redrawn after every letter
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+$('supSearch').addEventListener('input', debounce(() => renderSuppliers(), 250));
 $('supBy').addEventListener('change', () => { setSearchBy('sup', $('supBy').value); renderSuppliers(); if (!$('supSearch').value.trim()) $('supSearch').focus(); });
 $('formHome').addEventListener('click', () => showPage('home'));
 $('cardsHome').addEventListener('click', () => showPage('home'));
-$('dbQ').addEventListener('input', () => { dbQ = $('dbQ').value; idx = 0; renderGallery(); $('gallery').scrollTo({left: 0}); });
+$('dbQ').addEventListener('input', debounce(() => { if (dbQ === $('dbQ').value) return; dbQ = $('dbQ').value; idx = 0; renderGallery(); $('gallery').scrollTo({left: 0}); }, 250));
 $('dbArch').addEventListener('change', () => { showArch = $('dbArch').checked; try { localStorage.setItem('pcm.showarch', showArch ? '1' : '0'); } catch(e) {} idx = 0; renderGallery(); $('gallery').scrollTo({left: 0}); });
 $('dbBy').addEventListener('change', () => { setSearchBy('db', $('dbBy').value); $('dbBy').classList.toggle('on', searchBy.db !== 'all'); idx = 0; renderGallery(); $('gallery').scrollTo({left: 0}); if (!dbQ.trim()) $('dbQ').focus(); });
 $('dbCat').addEventListener('change', () => { dbCat = $('dbCat').value; idx = 0; renderGallery(); $('gallery').scrollTo({left: 0}); });
@@ -1834,14 +1836,28 @@ function renderDbCats(){
 }
 // The gallery takes the height of the card being shown (not the tallest card), so the buttons under it stay close
 const slideRO = typeof ResizeObserver === 'function' ? new ResizeObserver(() => fitGallery()) : null;
+// Only the card shown and its neighbours are drawn; far ones are emptied again, so the page stays light with hundreds of products
+let galleryView = [];
+const SLIDE_NEAR = 2, SLIDE_KEEP = 5;
+function fillSlides(){
+  const kids = $('gallery').children;
+  if (!kids.length || !kids[0].classList.contains('slide')) return;
+  for (let i = 0; i < kids.length; i++) {
+    const s = kids[i], d = Math.abs(i - idx), c = galleryView[i];
+    if (d <= SLIDE_NEAR && c && s.dataset.pid !== c.id) { s.innerHTML = cardHTML(c, true); s.dataset.pid = c.id; }
+    else if (d > SLIDE_KEEP && s.dataset.pid) { s.innerHTML = ''; delete s.dataset.pid; }
+  }
+}
 function fitGallery(){
+  fillSlides();
   const g = $('gallery'), s = g.children[idx];
   g.style.height = s && s.classList.contains('slide') ? s.offsetHeight + 'px' : '';
 }
 function renderGallery(){
   renderDbCats();
   const v = viewCards();
-  $('gallery').innerHTML = v.length ? v.map(c => `<div class="slide">${cardHTML(c, true)}</div>`).join('') :
+  galleryView = v;   // empty slides keep the swipe positions; the cards near the one shown are drawn by fillSlides()
+  $('gallery').innerHTML = v.length ? v.map(() => `<div class="slide"></div>`).join('') :
     `<p class="empty" style="flex:1">${dbQ.trim() || dbCat ? L('No products match your search.', 'لا توجد منتجات مطابقة لبحثك.') : L('No cards yet. Tap + Add to create your first card.','لا توجد بطاقات بعد. اضغط «+ إضافة» لإنشاء أول بطاقة.')}</p>`;
   idx = Math.max(0, Math.min(idx, v.length - 1));
   if (slideRO) { slideRO.disconnect(); for (const s of $('gallery').children) slideRO.observe(s); }
@@ -2715,8 +2731,9 @@ $('cartBack').addEventListener('click', () => { renderShop(); showPage('shop'); 
 $('sumBack').addEventListener('click', () => { renderCart(); showPage('cart'); });
 $('shopBody').addEventListener('input', e => {
   if (e.target.matches('[data-tq],[data-tper]')) { const t = e.target.closest('[data-tile]'); if (t) tileCtnSum(t); }
-  if (e.target.id === 'shopQ') { shopQ = e.target.value; shopShown = SHOP_PAGE; renderShopGrid(); }
+  if (e.target.id === 'shopQ') shopSearch(e.target.value);
 });
+const shopSearch = debounce(v => { if (v === shopQ) return; shopQ = v; shopShown = SHOP_PAGE; renderShopGrid(); }, 250);
 $('shopBody').addEventListener('change', e => {
   if (e.target.id === 'shopCat') { shopCat = e.target.value; shopShown = SHOP_PAGE; renderShopGrid(); }
   if (e.target.id === 'shopSup') { shopSup = e.target.value; shopShown = SHOP_PAGE; renderShopGrid(); }
@@ -4182,7 +4199,9 @@ function supplierGroups(){
   });
   return [...map.values()].sort((a, b) => a.none - b.none || a.name.localeCompare(b.name));
 }
-function renderSuppliers(){
+let supView = [];
+function renderSuppliers(force){
+  if ($('supPage').hidden && force !== true) return;   // drawn when the page is opened
   const q = $('supSearch').value.trim().toLowerCase(), groups = supplierGroups(), by = searchBy.sup, terms = q.split(/\s+/).filter(Boolean);
   if (document.activeElement !== $('supBy')) fillSearchBy($('supBy'), by);
   $('supSearch').placeholder = searchPh(by);
@@ -4206,13 +4225,25 @@ function renderSuppliers(){
     const factories = [...new Set(g.items.map(({c}) => (c.factory||'').trim()).filter(Boolean))];
     const storeIds = [...new Set(g.items.map(({c}) => (c.storeId||'').trim()).filter(Boolean))];
     const bc = biz ? `<img class="bc" loading="lazy" src="${biz.biz}" alt="${L('Business card','بطاقة العمل')}" data-biz="${biz.id}">` : `<span class="bc ph" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M14 10h4M14 13.5h3"/></svg></span>`;
-    const rows = g.items.map(({c}) => {
-      const im = imgsOf(c)[0], pr = pricesOf(c);
-      return `<li><details class="prod"><summary>${im ? `<img src="${im}" alt="" loading="lazy">` : '<span class="noimg"></span>'}<span class="nm">${esc(pname(c))}</span><span class="pc">${rowPrice(c)}</span>${chev}</summary><div class="pbody">${cardHTML(c, true)}</div></details></li>`;
-    }).join('');
-    return `<details class="sup"${q || list.length === 1 ? ' open' : ''}><summary>${bc}<span class="who"><strong>${esc(g.name)}</strong><small>${g.none ? L('Products without a supplier name','منتجات بدون اسم مورّد') : `${L('Factory','المصنع')}: ${factories.length ? esc(factories.join(' · ')) : '—'} · ${L('Store ID','رقم المتجر')}: ${esc(storeIds.join(' · ')) || '—'}`}</small></span><span class="n">${g.all && g.all !== g.items.length ? g.items.length + '/' + g.all : g.items.length}</span>${chev}</summary><div class="supbar"><button type="button" class="suppdf" data-suppdf="${esc(g.none ? '\u0000' : g.name.toLowerCase())}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>${L(`Export PDF (${g.all || g.items.length} ${(g.all || g.items.length) === 1 ? 'product' : 'products'})`, `تصدير PDF (${g.all || g.items.length} منتج)`)}</button></div><ul>${rows}</ul></details>`;
+    const open = q || list.length === 1;
+    const rows = open ? supRows(g) : '';
+    return `<details class="sup" data-gi="${list.indexOf(g)}"${open ? ' open' : ''}><summary>${bc}<span class="who"><strong>${esc(g.name)}</strong><small>${g.none ? L('Products without a supplier name','منتجات بدون اسم مورّد') : `${L('Factory','المصنع')}: ${factories.length ? esc(factories.join(' · ')) : '—'} · ${L('Store ID','رقم المتجر')}: ${esc(storeIds.join(' · ')) || '—'}`}</small></span><span class="n">${g.all && g.all !== g.items.length ? g.items.length + '/' + g.all : g.items.length}</span>${chev}</summary><div class="supbar"><button type="button" class="suppdf" data-suppdf="${esc(g.none ? '\u0000' : g.name.toLowerCase())}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>${L(`Export PDF (${g.all || g.items.length} ${(g.all || g.items.length) === 1 ? 'product' : 'products'})`, `تصدير PDF (${g.all || g.items.length} منتج)`)}</button></div><ul>${rows}</ul></details>`;
+  }).join('');
+  supView = list;
+}
+const SUP_CHEV = '<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+// a supplier's product rows; each product's full card is drawn when its row is opened
+function supRows(g){
+  return g.items.map(({c}) => {
+    const im = imgsOf(c)[0];
+    return `<li><details class="prod" data-pid="${esc(c.id)}"><summary>${im ? `<img src="${im}" alt="" loading="lazy">` : '<span class="noimg"></span>'}<span class="nm">${esc(pname(c))}</span><span class="pc">${rowPrice(c)}</span>${SUP_CHEV}</summary><div class="pbody"></div></details></li>`;
   }).join('');
 }
+$('supList').addEventListener('toggle', e => {
+  const d = e.target; if (!d.open) return;
+  if (d.matches('details.sup')) { const ul = d.querySelector(':scope > ul'), g = supView[+d.dataset.gi]; if (ul && g && !ul.children.length) ul.innerHTML = supRows(g); }
+  else if (d.matches('details.prod')) { const b = d.querySelector(':scope > .pbody'), c = cards.find(x => x.id === d.dataset.pid); if (b && c && !b.children.length) b.innerHTML = cardHTML(c, true); }
+}, true);
 // ---- Supplier PDF: one supplier's products with their main photo and details ----
 // Pages are drawn on a canvas (so Arabic and Chinese text render with the phone's own fonts)
 // and packed into a PDF here, without any outside library.
