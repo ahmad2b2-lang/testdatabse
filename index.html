@@ -3106,7 +3106,13 @@ function renderBills(){
     return;
   }
   if (!bills.length) { body.innerHTML = `<p class="empty">${esc(L('No saved orders yet. In Add to cart, create an order summary and tap Save order or Export PDF.', 'لا توجد طلبات محفوظة بعد. في «أضف إلى السلة» أنشئ ملخص الطلب ثم اضغط «حفظ الطلب» أو «تصدير PDF».'))}</p>`; return; }
-  body.innerHTML = `<ul class="billlist">${bills.map(x => {
+  // all saved orders together, in Saudi riyals (each order converted at the rates saved with it)
+  const allSar = bills.reduce((t, x) => t + (num(billIn(x, 'SAR').tt.final) || 0), 0);
+  const allPcs = bills.reduce((t, x) => t + (num(x.tt.count) || 0), 0), allCtn = bills.reduce((t, x) => t + (num(x.tt.ctns) || 0), 0);
+  const nb = bills.length;
+  body.innerHTML = `<div class="exptotal"><small>${esc(L('Total value of all orders', 'إجمالي قيمة جميع الطلبات'))}</small><b>${esc(moneyIn(allSar, 'SAR'))}</b><span>${esc(L(`${nb} ${nb === 1 ? 'order' : 'orders'} · ${qn(allPcs)} pcs${allCtn ? ` · ${qn(allCtn)} cartons` : ''}`, `${nb} طلب · ${qn(allPcs)} قطعة${allCtn ? ` · ${qn(allCtn)} كرتون` : ''}`))}</span></div>
+    <p class="hint" style="margin:-4px 0 0">${esc(L('Orders in RMB or USD are converted at the exchange rates saved with each order.', 'الطلبات باليوان أو الدولار محوّلة بأسعار الصرف المحفوظة مع كل طلب.'))}</p>
+    <ul class="billlist">${bills.map(x => {
     const sups = [...new Set(x.lines.map(l => l.sup || L('No supplier', 'بدون مورّد')))];
     return `<li><button type="button" data-bill="${esc(x.id)}"><span class="bl1"><b class="mono">${esc(x.no)}</b><span>${esc(fmtDate(x.date))}</span></span>
       ${x.note ? `<span class="bl2" dir="auto">${esc(x.note)}</span>` : ''}
