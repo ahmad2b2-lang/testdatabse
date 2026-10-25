@@ -201,7 +201,7 @@ html.guest .tplbtn{display:none}
 .sup .chev{flex:none;color:var(--muted);transition:transform .15s}
 .sup[open] .chev{transform:rotate(90deg)}
 .sup ul{list-style:none;margin:0;padding:0 0 8px}
-.supbar{padding:0 0 10px}
+.supbar{padding:0 0 10px;display:flex;flex-wrap:wrap;gap:8px}
 .suppdf{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;font-size:.88rem;border-color:var(--accent);color:var(--accent);background:var(--leaf)}
 .suppdf[aria-busy="true"]{opacity:.65}
 .sup li button{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;text-align:start;font-weight:500}
@@ -1674,6 +1674,17 @@ function priceNote(c){
 }
 function safeURL(u){ try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x : null; } catch(e){ return null; } }
 const isWeChat = u => /^(weixin|wxp):|wechat\.com|weixin\.qq\.com/i.test(String(u || '').trim());
+// A supplier's WeChat link belongs to the supplier: a product without its own link shows it.
+// It comes from the supplier's saved details, or from another of their products that has a WeChat link.
+function supplierLink(name){
+  const k = supKey(name); if (!k) return '';
+  const r = suppliers && suppliers[k] && suppliers[k].link; if (r) return r;
+  const c = cards.find(x => !x.sample && supKey(x.supplier) === k && isWeChat(x.url));
+  return c ? c.url.trim() : '';
+}
+const supplierWa = name => { const k = supKey(name), v = k && suppliers && suppliers[k]; return (v && v.wa) || ''; };   // WhatsApp link read from the business card
+const WA_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l1.6-4.6A8.5 8.5 0 1 1 8 19.6z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1.2-1.3-2-1-1 .8a4 4 0 0 1-2.2-2.2l.8-1-1-2z"/></svg>';
+function waHTML(u){ const x = safeURL(u); return x ? `<a class="plink" href="${esc(x.href)}" target="_blank" rel="noopener">${WA_ICON}WhatsApp</a>` : ''; }
 const WX_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 4C5.1 4 2 6.6 2 9.8c0 1.8 1 3.4 2.6 4.5L4 16.6l2.6-1.4c.8.2 1.6.4 2.4.4h.6a5 5 0 0 1-.2-1.4c0-3.3 3.1-6 7-6h.5C16.2 5.7 12.9 4 9 4zm-2.4 3.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.8 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zM16.4 9.6c-3.3 0-5.9 2.2-5.9 4.9s2.6 4.9 5.9 4.9c.7 0 1.3-.1 1.9-.3l2.2 1.2-.5-1.9c1.4-.9 2.3-2.3 2.3-3.9 0-2.7-2.6-4.9-5.9-4.9zm-2 2.8a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5zm4 0a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5z"/></svg>';
 function linkHTML(u){
   if (!u) return '';
@@ -1719,7 +1730,9 @@ function cardHTML(c, actions){
   const imgBlock = im.length
     ? `<button type="button" class="zoom" data-zoom="${c.id}" aria-label="${L('Enlarge photo','تكبير الصورة')}"><img src="${im[0]}" alt="${esc(pname(c))}" loading="lazy" decoding="async"></button>` + (im.length > 1 ? `<span class="pcount">1/${im.length}</span><button type="button" class="imgnext" data-next="${c.id}" aria-label="${L('Next photo','الصورة التالية')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>` : '')
     : `<span class="nophoto">${L('No product photo','لا توجد صورة للمنتج')}</span>`;
-  const link = c.url ? linkHTML(c.url) : `<p class="muted-row">${L('Product link','رابط المنتج')}: —</p>`;
+  const sLink = !c.url && supplierLink(c.supplier);
+  const sWa = supplierWa(c.supplier), wa = sWa && !String(c.url || '').includes('wa.me/') ? `<div style="margin-top:6px">${waHTML(sWa)}</div>` : '';
+  const link = (c.url ? linkHTML(c.url) : sLink ? `${linkHTML(sLink)}<p class="muted-row" style="margin:4px 0 0">${L("Supplier's WeChat", 'WeChat المورّد')}</p>` : sWa ? '' : `<p class="muted-row">${L('Product link','رابط المنتج')}: —</p>`) + wa;
   const bz = bizOf(c), biz = bz ? `<button type="button" class="bizbtn" data-view="${c.id}"><img src="${bz}" alt="" loading="lazy" decoding="async">${L('Supplier business card','بطاقة عمل المورّد')}</button>` : `<p class="muted-row">${L('Supplier business card','بطاقة عمل المورّد')}: —</p>`;
   return `<article class="pcard">
     <div class="img" data-card="${c.id || ''}" data-i="0">${imgBlock}</div>
@@ -4649,7 +4662,7 @@ function renderSuppliers(force){
     const bc = biz ? `<img class="bc" loading="lazy" src="${biz.biz}" alt="${L('Business card','بطاقة العمل')}" data-biz="${biz.id}">` : `<span class="bc ph" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M14 10h4M14 13.5h3"/></svg></span>`;
     const open = q || list.length === 1;
     const rows = open ? supRows(g) : '';
-    return `<details class="sup" data-gi="${list.indexOf(g)}"${open ? ' open' : ''}><summary>${bc}<span class="who"><strong>${esc(g.name)}</strong><small>${g.none ? L('Products without a supplier name','منتجات بدون اسم مورّد') : `${L('Factory','المصنع')}: ${factories.length ? esc(factories.join(' · ')) : '—'} · ${L('Store ID','رقم المتجر')}: ${esc(storeIds.join(' · ')) || '—'}`}</small></span><span class="n">${g.all && g.all !== g.items.length ? g.items.length + '/' + g.all : g.items.length}</span>${chev}</summary><div class="supbar"><button type="button" class="suppdf" data-suppdf="${esc(g.none ? '\u0000' : g.name.toLowerCase())}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>${L(`Export PDF (${g.all || g.items.length} ${(g.all || g.items.length) === 1 ? 'product' : 'products'})`, `تصدير PDF (${g.all || g.items.length} منتج)`)}</button></div><ul>${rows}</ul></details>`;
+    return `<details class="sup" data-gi="${list.indexOf(g)}"${open ? ' open' : ''}><summary>${bc}<span class="who"><strong>${esc(g.name)}</strong><small>${g.none ? L('Products without a supplier name','منتجات بدون اسم مورّد') : `${L('Factory','المصنع')}: ${factories.length ? esc(factories.join(' · ')) : '—'} · ${L('Store ID','رقم المتجر')}: ${esc(storeIds.join(' · ')) || '—'}`}</small></span><span class="n">${g.all && g.all !== g.items.length ? g.items.length + '/' + g.all : g.items.length}</span>${chev}</summary><div class="supbar">${!g.none && supplierLink(g.name) ? `<button type="button" class="wxopen" data-wx="${esc(supplierLink(g.name))}">${WX_ICON}${L('Open in WeChat', 'فتح في WeChat')}</button>` : ''}${!g.none && supplierWa(g.name) ? waHTML(supplierWa(g.name)) : ''}<button type="button" class="suppdf" data-suppdf="${esc(g.none ? '\u0000' : g.name.toLowerCase())}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg>${L(`Export PDF (${g.all || g.items.length} ${(g.all || g.items.length) === 1 ? 'product' : 'products'})`, `تصدير PDF (${g.all || g.items.length} منتج)`)}</button></div><ul>${rows}</ul></details>`;
   }).join('');
   supView = list;
 }
@@ -5369,7 +5382,7 @@ async function importData(files){
         attached += photos.length + (bizName && images[bizName] ? 1 : 0);
         if (old) { cards[cards.indexOf(old)] = c; updated++; } else { cards.push(c); added++; }
         const sk = supKey(c.supplier);
-        if (sk) suppliers[sk] = {name: c.supplier, factory: c.factory, storeId: c.storeId};
+        if (sk) suppliers[sk] = {...(suppliers[sk] || {}), name: c.supplier, factory: c.factory, storeId: c.storeId};   // keeps the saved card and WeChat link
       });
       cards = cards.filter(c => !c.sample);
       cards.sort((a, b) => String(addedOf(b)).localeCompare(String(addedOf(a))));
