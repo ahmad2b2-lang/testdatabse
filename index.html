@@ -2704,9 +2704,10 @@ function renderSummary(){
   const b = makeBill();
   body.innerHTML = `${editBar()}
     <div class="field"><label for="sNote">${esc(L('Order name or note (optional)', 'اسم الطلب أو ملاحظة (اختياري)'))}</label><input id="sNote" dir="auto" autocomplete="off" value="${esc(cart.note || '')}" placeholder="${esc(L('e.g. customer, shop or trip', 'مثل: العميل أو المحل أو الرحلة'))}"></div>
+    <div class="cmprow">${curSeg()}<span class="small" style="color:var(--muted);font-size:.8rem">${esc(L(`1 USD = ${rates.usd} RMB = ${rates.sar} SAR`, `1 دولار = ${rates.usd} يوان = ${rates.sar} ريال`))}</span></div>
     <div class="sumtop"><button type="button" class="primary" data-spdf style="flex:1;min-height:46px">${esc(L('Export PDF', 'تصدير PDF'))}</button></div>
     <p class="dtmsg" id="sMsgTop" hidden></p>
-    ${billHTML(b)}
+    <div id="sumBill">${billHTML(b)}</div>
     <div class="sumactions">
       <button type="button" class="primary" id="sPdf" data-spdf>${esc(L('Export PDF', 'تصدير PDF'))}</button>
       <button type="button" id="sSaveBill" class="adminonly">${esc(cart.edit ? L(`Save changes to ${cart.edit.no}`, `حفظ التعديلات على ${cart.edit.no}`) : L('Save order', 'حفظ الطلب'))}</button>
@@ -2798,9 +2799,11 @@ $('cartBody').addEventListener('change', e => {
 });
 $('cartBody').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.closest('[data-adjed]') && e.target.matches('input')) { e.preventDefault(); const ok = e.target.closest('[data-adjed]').querySelector('[data-aok]'); if (ok) ok.click(); } });
 $('sumBody').addEventListener('input', e => { if (e.target.id === 'sNote') { cart.note = e.target.value; saveCart(); } });
-$('sumBody').addEventListener('change', e => { if (e.target.id === 'sNote') renderSummary(); });
+// only the order preview is redrawn, so the tap that ended the typing (Save, Export, currency…) still goes through
+$('sumBody').addEventListener('change', e => { if (e.target.id === 'sNote' && $('sumBill')) $('sumBill').innerHTML = billHTML(makeBill()); });
 $('cartBody').addEventListener('input', e => { if (e.target.id === 'cExtra') { cart.extra = e.target.value.trim(); cart.order = null; saveCart(); fillTotals(); } });
 $('sumBody').addEventListener('click', async e => {
+  const cc = e.target.closest('[data-ccur]'); if (cc) { if (cc.dataset.ccur !== cart.cur) { cart.cur = cc.dataset.ccur; saveCart(); renderSummary(); } return; }   // currency of the summary (same as the cart's)
   if (e.target.closest('#sEdit')) { renderCart(); showPage('cart'); return; }
   if (e.target.closest('#sCopy')) { sMsg(await copyText(summaryText()) ? L('Summary copied', 'تم نسخ الملخص') : L("Couldn't copy here.", 'تعذّر النسخ هنا.'), false); return; }
   if (e.target.closest('#sShare')) {
