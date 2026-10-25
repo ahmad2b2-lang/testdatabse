@@ -2886,6 +2886,23 @@ function doneNoteHTML(b){
 const BILLS_KEY = 'pcm.bills.v1';
 let bills = Array.isArray(store.get(BILLS_KEY, null)) ? store.get(BILLS_KEY, null) : [];
 let billOpen = null;   // id of the saved bill being viewed
+// A saved order can be viewed (and exported or copied) in another currency, converted at the rates saved with it.
+// Only the view changes: the saved order keeps its own currency and prices.
+let billView = {id: null, cur: null};   // the currency picked for one saved order
+const viewCurOf = id => billView.id === id ? billView.cur : null;
+function billIn(b, cur){
+  if (!b || !cur || cur === b.cur) return b;
+  const ru = num(b.rates && b.rates.usd) || num(rates.usd), rs = num(b.rates && b.rates.sar) || num(rates.sar);
+  const k = v => { const n = typeof v === 'number' ? v : num(v); if (n === null || isNaN(n)) return v; const usd = b.cur === 'USD' ? n : b.cur === 'RMB' ? n / ru : n / rs; return cur === 'USD' ? usd : cur === 'RMB' ? usd * ru : usd * rs; };
+  const LF = ['unit', 'total', 'unit0', 'total0', 'adj'], TF = ['sub', 'lineAdj', 'lineDisc', 'lineExtra', 'oadj', 'extra', 'vat', 'final'];
+  return Object.assign({}, b, {cur,
+    lines: b.lines.map(l => { const o = Object.assign({}, l); for (const f of LF) if (o[f] !== undefined && o[f] !== null) o[f] = k(o[f]); return o; }),
+    tt: Object.assign({}, b.tt, Object.fromEntries(TF.filter(f => b.tt && b.tt[f] !== undefined && b.tt[f] !== null).map(f => [f, k(b.tt[f])])))});
+}
+function billCurSeg(b){
+  const c = viewCurOf(b.id) || b.cur;
+  return `<div class="cmprow"><div class="seg" role="group" aria-label="${esc(L('Currency', 'العملة'))}">${['SAR', 'USD', 'RMB'].map(x => `<button type="button" data-bcur="${x}" aria-pressed="${x === c}">${x}</button>`).join('')}</div>${c !== b.cur ? `<span class="small" style="color:var(--muted);font-size:.8rem">${esc(L(`Saved in ${b.cur}`, `محفوظ بـ ${b.cur}`))}</span>` : ''}</div>`;
+}
 function moneyIn(v, cur){
   if (v === null || v === undefined || isNaN(v)) return '—';
   const n = (v < 0 ? '-' : '') + fmtN(Math.abs(v));
@@ -2915,12 +2932,13 @@ function billTotalsHTML(b){
     <div class="grand"><dt>${esc(L('Final price', 'السعر النهائي'))}</dt><dd>${m(b.tt.final)}</dd></div>`;
 }
 function billHTML(b){
-  const m = v => moneyIn(v, b.cur);
+  const m = v => moneyIn(v, b.cur), mn = v => v === null || v === undefined || isNaN(v) ? '—' : (v < 0 ? '-' : '') + fmtN(Math.abs(v));
+  const cs = b.cur === 'SAR' ? L('SAR', 'ر.س') : b.cur === 'USD' ? '$' : '¥';
   return `<div class="sumhead"><h2>${esc(L('Order summary', 'ملخص الطلب'))}</h2><p>${esc(b.no)} · ${esc(fmtDate(b.date))}${b.edited ? ' · ' + esc(L('edited', 'عُدِّل')) + ' ' + esc(fmtDate(b.edited)) : ''}</p>${b.note ? `<p class="bnote" dir="auto">${esc(b.note)}</p>` : ''}</div>
     ${billGroups(b).map(g => `<section class="sgroup"><h3><bdi dir="auto">${esc(g.name)}</bdi>${g.store ? `<span>${esc(g.store)}</span>` : ''}</h3>
-      <div style="overflow-x:auto"><table class="stable"><thead><tr><th>${esc(L('Product', 'المنتج'))}</th><th class="n">${esc(L('Qty', 'الكمية'))}</th><th class="n">${esc(L('Unit price', 'سعر الوحدة'))}</th><th class="n">${esc(L('Total', 'الإجمالي'))}</th></tr></thead>
-      <tbody>${g.lines.map(l => `<tr><td dir="auto">${esc(billName(l))}${l.variant ? `<br><small style="color:var(--muted)">${esc(l.variant)}</small>` : ''}${l.adjSpec ? `<small class="adjnote${l.adjSpec.dir === 'extra' ? ' extra' : ''}" dir="auto">${esc(adjLabel(l.adjSpec))} (${esc(moneyS(l.adj, b.cur))})</small>` : ''}</td><td class="n"><bdi dir="ltr">${qn(l.qty)}</bdi>${l.uom ? `<br><small style="color:var(--muted)">${esc(l.uom)}</small>` : ''}${l.ctn ? `<br><small style="color:var(--muted);white-space:nowrap">${esc(ctnText(l.ctn.n, l.ctn.per))}</small>` : ''}</td><td class="n">${l.adjSpec ? `<span class="was">${m(l.unit0)}</span><br>` : ''}${m(l.unit)}</td><td class="n">${m(l.total)}</td></tr>`).join('')}</tbody>
-      <tfoot><tr><td colspan="3">${esc(L('Supplier subtotal', 'إجمالي المورّد'))}</td><td class="n">${m(g.lines.reduce((t, l) => t + (l.total || 0), 0))}</td></tr></tfoot></table></div></section>`).join('')}
+      <div style="overflow-x:auto"><table class="stable"><thead><tr><th>${esc(L('Product', 'المنتج'))}</th><th class="n">${esc(L('Qty', 'الكمية'))}</th><th class="n">${esc(L('Unit price', 'سعر الوحدة'))}<br>${esc(cs)}</th><th class="n">${esc(L('Total', 'الإجمالي'))}<br>${esc(cs)}</th></tr></thead>
+      <tbody>${g.lines.map(l => `<tr><td dir="auto">${esc(billName(l))}${l.variant ? `<br><small style="color:var(--muted)">${esc(l.variant)}</small>` : ''}${l.adjSpec ? `<small class="adjnote${l.adjSpec.dir === 'extra' ? ' extra' : ''}" dir="auto">${esc(adjLabel(l.adjSpec))} (${esc(moneyS(l.adj, b.cur))})</small>` : ''}</td><td class="n"><bdi dir="ltr">${qn(l.qty)}</bdi>${l.uom ? `<br><small style="color:var(--muted)">${esc(l.uom)}</small>` : ''}${l.ctn ? `<br><small style="color:var(--muted);white-space:normal;display:inline-block;min-width:4.5em">${esc(ctnText(l.ctn.n, l.ctn.per))}</small>` : ''}</td><td class="n">${l.adjSpec ? `<span class="was">${mn(l.unit0)}</span><br>` : ''}${mn(l.unit)}</td><td class="n">${mn(l.total)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="3">${esc(L('Supplier subtotal', 'إجمالي المورّد'))}</td><td class="n">${mn(g.lines.reduce((t, l) => t + (l.total || 0), 0))}</td></tr></tfoot></table></div></section>`).join('')}
     <div class="panel"><dl class="totals">${billTotalsHTML(b)}</dl>
       <p class="hint">${esc(L(`Prices are supplier costs converted at 1 USD = ${b.rates.usd} RMB = ${b.rates.sar} SAR.`, `الأسعار هي تكلفة المورّد محوّلة بسعر 1 دولار = ${b.rates.usd} يوان = ${b.rates.sar} ريال.`))}</p></div>`;
 }
@@ -3022,8 +3040,10 @@ async function renderBillPages(b){
       }
       if (r.t === 'sub') { txt(ctx, L('Supplier subtotal', 'إجمالي المورّد'), M + 14, y + 16, `600 22px ${B}`, FG); txtEnd(ctx, m(r.g.lines.reduce((t, l) => t + (l.total || 0), 0)), cTot - 14, y + 16, `700 23px ${MO}`, FG); }
       if (r.t === 'totals') {
-        const bw = 560, x0 = W - M - bw; let ty = y + 30;
-        const row = (lab, val, big) => { txt(ctx, lab, x0 + 20, ty, `${big ? 700 : 500} ${big ? 28 : 23}px ${B}`, big ? FG : MUT); txtEnd(ctx, val, W - M - 20, ty, `${big ? 700 : 500} ${big ? 30 : 23}px ${MO}`, big ? ACC : FG); ty += 52; };
+        const bw = 660, x0 = W - M - bw; let ty = y + 30;
+        const fit = (t, font, w) => { ctx.font = font; if (ctx.measureText(t).width <= w) return t; let k = t.length; while (k > 1 && ctx.measureText(t.slice(0, k) + '…').width > w) k--; return t.slice(0, k).trimEnd() + '…'; };
+        const row = (lab, val, big) => { ctx.font = `${big ? 700 : 500} ${big ? 30 : 23}px ${MO}`; const vw = ctx.measureText(val).width, lf = `${big ? 700 : 500} ${big ? 28 : 23}px ${B}`;
+          txt(ctx, fit(lab, lf, bw - 40 - vw - 24), x0 + 20, ty, lf, big ? FG : MUT); txtEnd(ctx, val, W - M - 20, ty, `${big ? 700 : 500} ${big ? 30 : 23}px ${MO}`, big ? ACC : FG); ty += 52; };
         ctx.fillStyle = SOFT; rrect(ctx, rtl ? M : x0, y + 14, bw, r.h - 40, 14); ctx.fill();
         row(subLabel(b.tt), m(b.tt.sub));
         for (const [t, v] of adjRows(b.tt, b.oadjSpec)) row(t, moneyS(v, b.cur));
@@ -3053,9 +3073,9 @@ async function exportBillPDF(b, btn, msg){
 // Saved bills page
 function renderBills(){
   $('billsTitle').textContent = L('Saved orders', 'الطلبات المحفوظة');
-  const body = $('billsBody'), b = billOpen && bills.find(x => x.id === billOpen);
+  const body = $('billsBody'), b0 = billOpen && bills.find(x => x.id === billOpen), b = b0 && billIn(b0, viewCurOf(b0.id));
   if (b) {
-    body.innerHTML = `<button type="button" class="more" id="bListBack" style="justify-self:start">${esc(L('All saved orders', 'كل الطلبات المحفوظة'))}</button>${doneNoteHTML(b)}${agBillNote(b)}${cart.edit && cart.edit.id === b.id ? `<p class="dtmsg">${esc(L('This order is open for editing in the cart.', 'هذا الطلب مفتوح للتعديل في السلة.'))} <button type="button" class="linkbtn" data-gocart>${esc(L('Go to cart', 'الذهاب إلى السلة'))}</button></p>` : ''}${billHTML(b)}
+    body.innerHTML = `<button type="button" class="more" id="bListBack" style="justify-self:start">${esc(L('All saved orders', 'كل الطلبات المحفوظة'))}</button>${doneNoteHTML(b)}${agBillNote(b)}${cart.edit && cart.edit.id === b.id ? `<p class="dtmsg">${esc(L('This order is open for editing in the cart.', 'هذا الطلب مفتوح للتعديل في السلة.'))} <button type="button" class="linkbtn" data-gocart>${esc(L('Go to cart', 'الذهاب إلى السلة'))}</button></p>` : ''}${billCurSeg(b0)}${billHTML(b)}
       <div class="sumactions">
         <button type="button" class="primary" id="bPdf">${esc(L('Export PDF', 'تصدير PDF'))}</button>
         <button type="button" id="bCopy">${esc(L('Copy text', 'نسخ النص'))}</button>
@@ -3079,6 +3099,7 @@ $('goBills').addEventListener('click', () => { billOpen = null; renderBills(); s
 $('billsHome').addEventListener('click', () => { if (billOpen) { billOpen = null; renderBills(); window.scrollTo(0, 0); } else showPage('home'); });
 $('billsBody').addEventListener('click', async e => {
   const open = e.target.closest('[data-bill]'); if (open) { billOpen = open.dataset.bill; renderBills(); window.scrollTo(0, 0); return; }
+  const bc = e.target.closest('[data-bcur]'); if (bc) { billView = {id: billOpen, cur: bc.dataset.bcur}; renderBills(); return; }
   if (e.target.closest('[data-goagent]')) { openAgent(); return; }
   if (e.target.closest('[data-gocart]')) { renderCart(); showPage('cart'); window.scrollTo(0, 0); return; }
   if (e.target.closest('[data-undocart]')) {
@@ -3087,8 +3108,8 @@ $('billsBody').addEventListener('click', async e => {
   }
   if (e.target.closest('#bListBack')) { billOpen = null; renderBills(); window.scrollTo(0, 0); return; }
   const b = billOpen && bills.find(x => x.id === billOpen); if (!b) return;
-  if (e.target.closest('#bPdf')) { exportBillPDF(b, e.target.closest('#bPdf'), bMsg); return; }
-  if (e.target.closest('#bCopy')) { bMsg(await copyText(billText(b)) ? L('Summary copied', 'تم نسخ الملخص') : L("Couldn't copy here.", 'تعذّر النسخ هنا.'), false); return; }
+  if (e.target.closest('#bPdf')) { exportBillPDF(billIn(b, viewCurOf(b.id)), e.target.closest('#bPdf'), bMsg); return; }
+  if (e.target.closest('#bCopy')) { bMsg(await copyText(billText(billIn(b, viewCurOf(b.id)))) ? L('Summary copied', 'تم نسخ الملخص') : L("Couldn't copy here.", 'تعذّر النسخ هنا.'), false); return; }
   if (e.target.closest('#bEdit')) {
     const miss = loadBill(b, true);
     toast(miss ? L(`Editing ${b.no}. ${miss} product(s) no longer exist and were left out.`, `تعديل ${b.no}. ${miss} منتج لم يعد موجودًا ولم يُضَف.`) : L(`Editing ${b.no}`, `تعديل ${b.no}`));
