@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2e7d32">
+<script>
+// Installable app (GitHub Pages only): manifest, icons and a small service worker
+if (/github\.io$/.test(location.hostname)) {
+  for (const [rel, href, extra] of [['manifest', 'manifest.webmanifest'], ['icon', 'icon-192.png', {type: 'image/png', sizes: '192x192'}], ['apple-touch-icon', 'apple-touch-icon.png']]) {
+    const l = document.createElement('link'); l.rel = rel; l.href = href; if (extra) Object.assign(l, extra); document.head.appendChild(l);
+  }
+  if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.45 system-ui,-apple-system,sans-serif;background:#fff}img{max-width:100%}[hidden]{display:none!important}</style>
 <style>
 html:not(.app-ready) .wrap{visibility:hidden}
