@@ -3316,7 +3316,8 @@ async function exportBillPDF(b, btn, msg){
   finally { billPdfBusy = false; btn.textContent = label; btn.removeAttribute('aria-busy'); }
 }
 
-// ---- one PDF with every saved order of an agent: a summary page, then each order as in its own PDF ----
+// ---- one PDF with every saved order of an agent: a summary page, then each order as in its own PDF.
+// The files are for suppliers and others: they never name the agent (no agent name in the pages or the file name). ----
 async function renderAgentCover(name, list, cur = 'SAR'){
   const W = 1240, H = 1754, M = 70, ACC = '#1f63b8', FG = '#16202c', MUT = '#56657a', LINE = '#cfdcec', SOFT = '#f0f5fb';
   const B = '"IBM Plex Sans","IBM Plex Sans Arabic","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif', MO = '"IBM Plex Mono",Menlo,monospace';
@@ -3342,8 +3343,7 @@ async function renderAgentCover(name, list, cur = 'SAR'){
     let yy;
     if (p === 0) {
       ctx.fillStyle = ACC; ctx.fillRect(0, 0, W, 190);
-      T(ctx, L('Orders with the agent', 'الطلبات لدى الوكيل'), M, 78, `600 30px ${B}`, '#dbe8f8');
-      T(ctx, name, M, 140, `700 52px ${B}`, '#fff', W - 2 * M);
+      T(ctx, L('Purchase orders', 'أوامر الشراء'), M, 128, `700 52px ${B}`, '#fff', W - 2 * M);
       T(ctx, L(`${list.length} ${list.length === 1 ? 'order' : 'orders'} · ${qn(pcs)} pcs${ctns ? ` · ${qn(ctns)} cartons` : ''}`, `${list.length} طلب · ${qn(pcs)} قطعة${ctns ? ` · ${qn(ctns)} كرتون` : ''}`), M, 250, `500 26px ${B}`, MUT);
       T(ctx, L(`Exported ${fmtDate(new Date().toISOString())}`, `تاريخ التصدير ${fmtDate(new Date().toISOString())}`), W - M, 250, `500 24px ${B}`, MUT, 0, true);
       yy = TOP;
@@ -3371,7 +3371,7 @@ async function renderAgentCover(name, list, cur = 'SAR'){
       T(ctx, moneyIn(tot, cur), W - M - 24, yy + 70, `700 36px ${MO}`, ACC, 0, true);
       T(ctx, L(`All amounts in ${cur}: orders saved in another currency are converted at the exchange rates saved with each order. Each order follows on the next pages.`, `جميع المبالغ بـ ${cur}: الطلبات المحفوظة بعملة أخرى محوّلة بأسعار الصرف المحفوظة مع كل طلب. تفاصيل كل طلب في الصفحات التالية.`), M, yy + 150, `500 20px ${B}`, MUT, W - 2 * M);
     }
-    T(ctx, `${name} · ${p + 1} / ${pages.length}`, W - M, H - 56, `500 19px ${B}`, MUT, 0, true);
+    T(ctx, `${p + 1} / ${pages.length}`, W - M, H - 56, `500 19px ${B}`, MUT, 0, true);
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
     out.push({jpg: new Uint8Array(await blob.arrayBuffer()), w: W, h: H}); cv.width = cv.height = 1;
   }
@@ -3391,8 +3391,7 @@ async function exportAgentOrdersPDF(id, btn, cur = agPdfCur){
       btn.textContent = L(`Preparing ${i + 1} of ${list.length}…`, `جارٍ التحضير ${i + 1} من ${list.length}…`);
       pages.push(...await renderBillPages(billIn(list[i], cur)));
     }
-    const safe = String(name).normalize('NFKD').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'agent';
-    const r = await saveBlob(`POs-${safe}-${cur}-${new Date().toISOString().slice(0, 10)}.pdf`, pdfFromJpegs(pages));
+    const r = await saveBlob(`POs-${cur}-${new Date().toISOString().slice(0, 10)}.pdf`, pdfFromJpegs(pages));
     const [t, bad] = saveResultMsg(r, L(`PDF ready in ${cur}: ${list.length} orders, ${pages.length} pages.`, `ملف PDF جاهز بـ ${cur}: ${list.length} طلب، ${pages.length} صفحة.`)); msg(t, bad);
   } catch(e) { console.warn(e); msg(L("Couldn't create the PDF. Try again.", 'تعذّر إنشاء ملف PDF. حاول مرة أخرى.'), true); }
   finally { billPdfBusy = false; btn.textContent = label; btn.disabled = false; btn.removeAttribute('aria-busy'); }
@@ -3623,9 +3622,9 @@ async function buildAgentXlsx(name, list, cur, step){
   const conv = list.map(b => billIn(b, cur)), orderSheets = [];
   for (let i = 0; i < conv.length; i++) { if (step) step(i); const sh = await billXlsxSheets(conv[i], X); conv[i]._sheets = sh.map(x => x.name); orderSheets.push(...sh); }
   const cells = [], heights = {}, merges = [], put = (r, c, v, st, f) => cells.push({r, c, v, s: st, f});
-  put(0, 0, `ORDERS WITH ${String(name).toUpperCase()}  代理订单汇总`, S.title); merges.push('A1:L1'); heights[0] = 26;
-  put(1, 0, 'Agent 代理', S.label); put(1, 2, name, S.value); put(1, 5, 'Exported 导出日期', S.label); put(1, 7, fmtDateEN(new Date()), S.value);
-  put(2, 0, 'Currency 币种', S.label); put(2, 2, cur, S.value); put(2, 5, 'Orders 订单数', S.label); put(2, 7, list.length, S.int);
+  put(0, 0, 'PURCHASE ORDERS  采购订单汇总', S.title); merges.push('A1:L1'); heights[0] = 26;
+  put(1, 0, 'Exported 导出日期', S.label); put(1, 2, fmtDateEN(new Date()), S.value); put(1, 5, 'Orders 订单数', S.label); put(1, 7, list.length, S.int);
+  put(2, 0, 'Currency 币种', S.label); put(2, 2, cur, S.value);
   put(3, 0, `All amounts in ${cur}. Orders saved in another currency are converted at the exchange rates saved with each order. Each order's details are on the following sheets.\n所有金额均为${cur}。其他币种的订单按各订单保存的汇率换算。各订单明细见后面的工作表。`, S.note); merges.push('A4:L4'); heights[3] = 36;
   const H = 5;
   ['No.\n序号', 'PO No.\n订单号', 'Date\n日期', 'Suppliers\n供应商', 'Note\n备注', 'Items\n品项', 'Quantity (pcs)\n数量', 'CTNs\n箱数', 'Saved in\n原币种', 'Order total (saved currency)\n订单金额（原币种）', `Order total (${cur})\n订单金额（${cur}）`, 'Sheets\n工作表']
@@ -3646,7 +3645,7 @@ async function buildAgentXlsx(name, list, cur, step){
   heights[T] = 22;
   const summary = {name: 'Summary 汇总', cells, heights, merges, images: [], freeze: H + 1, widths: [6, 17, 13, 34, 30, 8, 12, 9, 9, 18, 18, 30]};
   const sheets = [summary, ...orderSheets];
-  sheets.title = `Orders with ${name}`;
+  sheets.title = 'Purchase orders';
   return XL.workbook(sheets, X.media);
 }
 async function exportAgentOrdersXlsx(id, btn, cur = agPdfCur){
@@ -3657,8 +3656,7 @@ async function exportAgentOrdersXlsx(id, btn, cur = agPdfCur){
   const label = btn.textContent; btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
   try {
     const blob = await buildAgentXlsx(name, list, cur, i => { btn.textContent = L(`Preparing ${i + 1} of ${list.length}…`, `جارٍ التحضير ${i + 1} من ${list.length}…`); });
-    const safe = String(name).normalize('NFKD').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'agent';
-    const r = await saveBlob(`POs-${safe}-${cur}-${new Date().toISOString().slice(0, 10)}.xlsx`, blob);
+    const r = await saveBlob(`POs-${cur}-${new Date().toISOString().slice(0, 10)}.xlsx`, blob);
     const [t, bad] = saveResultMsg(r, L(`Excel file ready in ${cur}: a summary sheet and ${list.length} orders. Yellow cells are for the suppliers to fill in or correct.`, `ملف Excel جاهز بـ ${cur}: صفحة ملخص و${list.length} طلب. الخانات الصفراء ليملأها المورّدون أو يصحّحوها.`)); msg(t, bad);
   } catch(e) { console.warn(e); msg(L("Couldn't create the Excel file. Try again.", 'تعذّر إنشاء ملف Excel. حاول مرة أخرى.'), true); }
   finally { billXlsBusy = false; btn.textContent = label; btn.disabled = false; btn.removeAttribute('aria-busy'); }
