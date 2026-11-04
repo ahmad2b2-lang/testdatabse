@@ -2744,6 +2744,10 @@ function shopFiltered(){
 }
 // Ordering by cartons: pieces per carton are saved on the product, per size option (key = option index, -1 without options)
 function ctnPerOf(c, v){ const n = c && c.ctnPer ? num(c.ctnPer[String(v)]) : null; return n > 0 ? Math.round(n) : 0; }
+// volume of one carton (CBM), per size like ctnPer; saved orders keep it on each line ("cbm")
+function cbmPerOf(c, v){ const n = c && c.cbmPer ? num(c.cbmPer[String(v)]) : null; return n > 0 ? n : 0; }
+const lineCbm = l => { if (num(l.cbm) > 0) return num(l.cbm); const c = cards.find(y => y.id === l.pid); return cbmPerOf(c, l.vi >= 0 ? l.vi : -1); };
+function billCbm(b){ let t = 0, n = 0; for (const l of b.lines || []) { const k = lineCbm(l); if (k && l.ctn && num(l.ctn.n)) { t += k * num(l.ctn.n); n++; } } return n ? {cbm: Math.round(t * 1000) / 1000, lines: n} : null; }
 function setCtnPer(c, v, per){
   if (!c || !(per > 0) || ctnPerOf(c, v) === per) return;
   c.ctnPer = Object.assign({}, c.ctnPer || {}, {[String(v)]: per});
@@ -3139,7 +3143,7 @@ function makeBill(){
   return {id: o.id || o.no, no: o.no, date: o.date, edited: cart.edit ? new Date().toISOString() : undefined, note: (cart.note || '').trim(), cur: cart.cur, rates: {usd: rates.usd, sar: rates.sar}, pct: tt.pct, vat: !!cart.vat,
     oadjSpec: tt.oadj ? Object.assign({}, cart.oadj) : null,
     lines: lines.map(l => Object.assign({pid: l.c.id, pn: {en: pname(l.c, 'en'), ar: pname(l.c, 'ar'), zh: pname(l.c, 'zh')}, variant: l.variant, vi: l.vi, uom: l.c.uom || '',
-      qty: l.qty, unit: l.unit, total: l.total, sup: (l.c.supplier || '').trim(), store: l.c.storeId || ''}, l.ctn ? {ctn: Object.assign({}, l.ctn)} : {},
+      qty: l.qty, unit: l.unit, total: l.total, sup: (l.c.supplier || '').trim(), store: l.c.storeId || ''}, l.ctn ? {ctn: Object.assign({}, l.ctn)} : {}, cbmPerOf(l.c, l.vi >= 0 ? l.vi : -1) ? {cbm: cbmPerOf(l.c, l.vi >= 0 ? l.vi : -1)} : {},
       l.adjSpec && l.adj ? {unit0: l.unit0, total0: l.total0, adj: l.adj, adjSpec: Object.assign({}, l.adjSpec)} : {})),
     tt: {sub: tt.sub, lineAdj: tt.lineAdj, lineDisc: tt.lineDisc, lineExtra: tt.lineExtra, oadj: tt.oadj, extra: tt.extra, vat: tt.vat, final: tt.final, count: tt.count, ctns: tt.ctns}};
 }
@@ -3577,8 +3581,9 @@ async function billXlsxSheets(b, X){   // the sheets of one order; X holds what 
       put(r, 9, l.uom || 'pcs', S.text);
       put(r, 10, Math.round((num(l.unit) || 0) * 1e6) / 1e6, S.eMoney);
       put(r, 11, Math.round((num(l.total) || 0) * 100) / 100, S.amount, `I${R}*K${R}`);
-      put(r, 12, '', S.eDec);
-      put(r, 13, '', S.dec, `IF(AND(G${R}>0,M${R}>0),G${R}*M${R},"")`);
+      const k = lineCbm(l), kc = k && l.ctn ? Math.round(k * num(l.ctn.n) * 1000) / 1000 : '';
+      put(r, 12, k || '', S.eDec);
+      put(r, 13, kc, S.dec, `IF(AND(G${R}>0,M${R}>0),G${R}*M${R},"")`);
       put(r, 14, l.adjSpec ? `${l.adjSpec.dir === 'extra' ? 'Price incl. extra 含附加' : 'Price after discount 折后价'} (was ${fmtN(num(l.unit0) || 0)})${l.adjSpec.why ? ' – ' + l.adjSpec.why : ''}` : '', S.eText);
       const ph = photoOf.get(l.pid);
       heights[r] = ph ? 78 : 30;
@@ -3596,7 +3601,7 @@ async function billXlsxSheets(b, X){   // the sheets of one order; X holds what 
     cells.splice(cells.findIndex(c => c.r === T && c.c === 8), 1); put(T, 8, sumV(l => l.qty), S.tInt, sum(8));
     const subV = Math.round(sumV(l => num(l.total)) * 100) / 100;
     cells.splice(cells.findIndex(c => c.r === T && c.c === 11), 1); put(T, 11, subV, S.tMoney, sum(11));
-    cells.splice(cells.findIndex(c => c.r === T && c.c === 13), 1); put(T, 13, '', S.tDec, sum(13));
+    cells.splice(cells.findIndex(c => c.r === T && c.c === 13), 1); { const tc = g.lines.reduce((t, l) => t + (l.ctn && lineCbm(l) ? lineCbm(l) * num(l.ctn.n) : 0), 0); put(T, 13, tc ? Math.round(tc * 1000) / 1000 : '', S.tDec, sum(13)); }
     heights[T] = 22;
     // an order-wide discount or extra agreed for the whole order (only when the order has one supplier)
     if (one && b.tt && num(b.tt.oadj)) {
@@ -3677,7 +3682,7 @@ function renderBills(){
   $('billsTitle').textContent = L('Saved orders', 'الطلبات المحفوظة');
   const body = $('billsBody'), b0 = billOpen && bills.find(x => x.id === billOpen), b = b0 && billIn(b0, viewCurOf(b0.id));
   if (b) {
-    body.innerHTML = `<button type="button" class="more" id="bListBack" style="justify-self:start">${esc(L('All saved orders', 'كل الطلبات المحفوظة'))}</button>${doneNoteHTML(b)}${billAgentPick(b0)}${agBillNote(b)}${cart.edit && cart.edit.id === b.id ? `<p class="dtmsg">${esc(L('This order is open for editing in the cart.', 'هذا الطلب مفتوح للتعديل في السلة.'))} <button type="button" class="linkbtn" data-gocart>${esc(L('Go to cart', 'الذهاب إلى السلة'))}</button></p>` : ''}${billCurSeg(b0)}${billHTML(b)}
+    body.innerHTML = `<button type="button" class="more" id="bListBack" style="justify-self:start">${esc(L('All saved orders', 'كل الطلبات المحفوظة'))}</button>${doneNoteHTML(b)}${billAgentPick(b0)}${agBillNote(b)}${billCbmNote(b0)}${cart.edit && cart.edit.id === b.id ? `<p class="dtmsg">${esc(L('This order is open for editing in the cart.', 'هذا الطلب مفتوح للتعديل في السلة.'))} <button type="button" class="linkbtn" data-gocart>${esc(L('Go to cart', 'الذهاب إلى السلة'))}</button></p>` : ''}${billCurSeg(b0)}${billHTML(b)}
       <div class="sumactions">
         <button type="button" class="primary" id="bPdf">${esc(L('Export PDF', 'تصدير PDF'))}</button>
         <button type="button" class="primary" id="bXls">${esc(L('Export Excel', 'تصدير Excel'))}</button>
@@ -3720,6 +3725,13 @@ function billGroupsHTML(){
       <ul class="billlist">${g.list.map(billLi).join('')}</ul></section>`;
   }).join('');
 }
+// total volume of an order, when its lines have cartons and CBM per carton
+function billCbmNote(b){
+  const v = billCbm(b); if (!v) return '';
+  const all = v.lines === b.lines.length, n = num(b.tt.ctns) || 0;
+  return `<p class="dtmsg">${esc(L(`Volume: ${fmtN3(v.cbm)} CBM${n ? ` · ${qn(n)} cartons` : ''}${all ? '' : ` (${v.lines} of ${b.lines.length} lines have CBM)`}`, `الحجم: ${fmtN3(v.cbm)} م³${n ? ` · ${qn(n)} كرتون` : ''}${all ? '' : ` (${v.lines} من ${b.lines.length} بنود لها حجم)`}`))}</p>`;
+}
+const fmtN3 = v => (Math.round(v * 100) / 100).toLocaleString('en-US', {maximumFractionDigits: 2});
 // agent picker on an opened order (admins only)
 function billAgentPick(b){
   if (window.APP_IS_GUEST) return '';
